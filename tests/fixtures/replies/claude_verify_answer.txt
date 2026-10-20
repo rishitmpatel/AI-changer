@@ -1,0 +1,6 @@
+Here's what I know about you:
+- You're a staff backend engineer at Northwind Labs, mostly writing Rust and Go.
+- You live in Austin, Texas.
+- You like concise answers with code first, and you use metric units.
+- You're building tidyfs, a Rust CLI for removing duplicate files, aiming for 1.0 in July.
+- You enjoy bouldering.

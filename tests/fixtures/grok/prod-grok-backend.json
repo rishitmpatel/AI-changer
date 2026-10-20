@@ -1,0 +1,40 @@
+{
+  "conversations": [
+    {
+      "conversation": {
+        "id": "grok-conv-01",
+        "title": "Startup name ideas",
+        "create_time": "2026-06-01T12:00:00Z",
+        "modify_time": "2026-06-01T12:10:00Z"
+      },
+      "responses": [
+        {
+          "response": {
+            "_id": "r1",
+            "message": "I'm a backend engineer building a dev-tools startup. Name ideas?",
+            "sender": "human",
+            "create_time": {
+              "$date": {
+                "$numberLong": "1748779200000"
+              }
+            }
+          }
+        },
+        {
+          "response": {
+            "_id": "r2",
+            "message": "Here are 10 ideas: Forgeline, Patchwork, …",
+            "sender": "ASSISTANT",
+            "create_time": {
+              "$date": {
+                "$numberLong": "1748779260000"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "projects": [],
+  "tasks": []
+}

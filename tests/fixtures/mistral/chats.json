@@ -1,0 +1,19 @@
+[
+  {
+    "id": "lc-01",
+    "title": "French phrases",
+    "createdAt": "2026-08-01T10:00:00Z",
+    "messages": [
+      {
+        "role": "user",
+        "content": "I'm learning French for a move to Lyon next year.",
+        "createdAt": "2026-08-01T10:00:00Z"
+      },
+      {
+        "role": "assistant",
+        "content": "Bonne idée ! Here are 20 phrases for daily life…",
+        "createdAt": "2026-08-01T10:00:05Z"
+      }
+    ]
+  }
+]

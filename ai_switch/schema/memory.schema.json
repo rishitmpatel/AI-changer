@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ai-switch/memory.schema.json",
+  "title": "ai-switch common memory format",
+  "type": "object",
+  "required": ["schema_version", "source_provider", "categories"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "source_provider": {"type": "string", "minLength": 1},
+    "categories": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {"$ref": "#/$defs/factList"},
+        "preferences": {"$ref": "#/$defs/factList"},
+        "people": {"$ref": "#/$defs/factList"},
+        "projects": {"$ref": "#/$defs/factList"},
+        "topics": {"$ref": "#/$defs/factList"}
+      }
+    }
+  },
+  "$defs": {
+    "factList": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+    "fact": {
+      "type": "object",
+      "required": ["id", "text", "source_provider", "date"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "text": {"type": "string", "minLength": 1},
+        "source_provider": {"type": "string", "minLength": 1},
+        "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}"},
+        "origin": {"type": "string", "description": "which fallback method produced the fact"}
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+[
+  {
+    "header": "Gemini Apps",
+    "title": "Prompted Suggest a 3-day bouldering training plan for an intermediate climber",
+    "time": "2026-05-10T08:15:22.123Z",
+    "products": [
+      "Gemini Apps"
+    ],
+    "activityControls": [
+      "Gemini Apps Activity"
+    ],
+    "safeHtmlItem": [
+      {
+        "html": "<p>Here is a 3-day plan:</p><ul><li>Day 1: limit bouldering</li><li>Day 2: rest</li></ul>"
+      }
+    ]
+  },
+  {
+    "header": "Gemini Apps",
+    "title": "Prompted I live in Austin and work as a backend engineer. What are good weekend hikes nearby?",
+    "time": "2026-05-10T08:30:00.000Z",
+    "products": [
+      "Gemini Apps"
+    ],
+    "safeHtmlItem": [
+      {
+        "html": "<p>Try the Barton Creek Greenbelt &amp; Hamilton Pool…</p>"
+      }
+    ]
+  },
+  {
+    "header": "Gemini Apps",
+    "title": "Used Gemini Apps",
+    "time": "2026-05-11T09:00:00.000Z",
+    "products": [
+      "Gemini Apps"
+    ]
+  },
+  {
+    "header": "Gemini Apps",
+    "title": "Prompted My partner Sam loves ramen. Recipes?",
+    "time": "2026-05-12T19:00:00.000Z",
+    "products": [
+      "Gemini Apps"
+    ],
+    "safeHtmlItem": [
+      {
+        "html": "<p>Shoyu ramen: …</p>"
+      }
+    ]
+  },
+  {
+    "header": "Search",
+    "title": "Searched for weather austin",
+    "time": "2026-05-12T19:05:00.000Z",
+    "products": [
+      "Search"
+    ]
+  }
+]

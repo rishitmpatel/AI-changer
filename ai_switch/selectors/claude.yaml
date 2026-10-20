@@ -1,0 +1,68 @@
+# Claude — see chatgpt.yaml for the format. Override in ~/.ai-switch/selectors/claude.yaml
+provider: claude
+display_name: Claude
+urls:
+  home: https://claude.ai/new
+  login: https://claude.ai/login
+  new_chat: https://claude.ai/new
+  memory_settings: https://claude.ai/settings/memory
+  capabilities: https://claude.ai/settings/capabilities
+  new_project: https://claude.ai/projects/create
+allowed_domains: [claude.ai, claude.com, anthropic.com, claudeusercontent.com, challenges.cloudflare.com]
+memory_from_chat: true
+selectors:
+  logged_in: ['[data-testid="user-menu-button"]', 'button[data-testid="user-menu"]', 'div[contenteditable="true"].ProseMirror']
+  chat_input: ['div[contenteditable="true"].ProseMirror', '[data-testid="chat-input"]', 'div[contenteditable="true"]']
+  send_button: ['button[aria-label="Send message"]', 'button[aria-label="Send Message"]']
+  stop_button: ['button[aria-label="Stop response"]', 'button[aria-label="Stop Response"]']
+  assistant_message: ['[data-testid="assistant-message"]', 'div.font-claude-response', 'div.font-claude-message']
+  user_message: ['[data-testid="user-message"]']
+  conversation_link: ['a[href^="/chat/"]']
+  start_import: ['button:has-text("Start import")', 'text=Start import', 'button:has-text("Get started")']
+  import_textbox: ['[role="dialog"] textarea', 'textarea[placeholder*="Paste"]', '[role="dialog"] div[contenteditable="true"]']
+  add_to_memory: ['button:has-text("Add to memory")']
+  memory_view: ['button:has-text("View and edit your memory")', 'button:has-text("View memory")', 'text=See memory']
+  memory_text: ['[role="dialog"] .prose', '[data-testid="memory-summary"]', '[role="dialog"]']
+  memory_edit_box: ['textarea[placeholder*="Tell Claude what to change"]', 'textarea[placeholder*="remember"]']
+  memory_edit_submit: ['button:has-text("Update")', 'button:has-text("Save")', 'button[type="submit"]']
+  project_name: ['input[name="name"]', 'input[placeholder*="name"]']
+  project_create: ['button:has-text("Create project")']
+  project_file_input: ['input[type="file"]']
+flows:
+  export_memory:          # 2. Settings → Memory shows the memory summary (legacy: Capabilities → View and edit)
+    - goto: memory_settings
+    - click_optional: memory_view
+    - wait: 1.5
+    - collect: memory_text
+  import_memory:          # 2. official: Settings → Memory → Start import → paste → Add to memory
+    - goto: memory_settings
+    - click: start_import
+    - fill: {into: import_textbox, text: "{part}"}
+    - click: add_to_memory
+    - wait: 3
+  import_profile:         # 4. "Tell Claude what to change or remove" box
+    - goto: memory_settings
+    - fill: {into: memory_edit_box, text: "{part}"}
+    - click: memory_edit_submit
+    - wait: 2
+  import_chats:           # upload the chat history as a file to a new Project
+    - goto: new_project
+    - fill: {into: project_name, text: "Imported chat history"}
+    - click: project_create
+    - wait: 2
+    - upload: {into: project_file_input, file: "{markdown}"}
+    - wait: 5
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 40000
+import:
+  official_flow: {style: block, limit: 20000}
+  ask_ai: {style: remember, limit: 8000}
+  browser: {style: block, limit: 4000}
+  clipboard: {style: block, limit: 20000}
+manual_steps:
+  export_file: "claude.ai → Settings → Privacy → Export data. Download the zip from the email (link expires in 24 h)."
+  export_memory: "Open https://claude.ai/new, paste the prompt and send it, then click Copy under the reply. (Or Settings → Memory and copy the summary.)"
+  import_memory: "Open https://claude.ai/settings/memory (legacy: Settings → Capabilities) → 'Start import' → paste into the box → 'Add to memory'. Updates can take up to 24 h."
+  import_chats: "Claude has no chat-history import. Create a Project (Projects → New project) and upload chat_history.md (or the files in conversations/) to its knowledge."

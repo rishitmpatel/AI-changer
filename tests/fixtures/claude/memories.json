@@ -1,0 +1,9 @@
+[
+  {
+    "conversations_memory": "**Work context**\nAlex is a staff backend engineer at Northwind Labs who manages the platform team. They write mostly Rust and Go.\n\n**Personal context**\nAlex lives in Austin, Texas with their partner Sam and a dog named Miso. They enjoy bouldering and Portuguese cooking.\n\n**Top of mind**\nAlex is building tidyfs, an open-source Rust CLI that removes duplicate files, aiming for a 1.0 release in July.\n\n**Preferences**\n- Prefers concise answers with code first\n- Uses metric units\n",
+    "project_memories": {
+      "p-01": "tidyfs uses the walkdir crate and targets Linux and macOS."
+    },
+    "account_uuid": "8f1e0000-0000-4000-8000-000000000001"
+  }
+]

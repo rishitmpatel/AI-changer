@@ -1,0 +1,32 @@
+[
+  {
+    "id": "mem_01",
+    "content": "Is a backend engineer who mostly writes Rust and Go.",
+    "created_at": "2026-02-14T09:12:00Z"
+  },
+  {
+    "id": "mem_02",
+    "content": "Prefers concise answers with code first.",
+    "created_at": "2026-03-02T18:40:00Z"
+  },
+  {
+    "id": "mem_03",
+    "content": "Partner is named Sam; they have a dog called Miso.",
+    "created_at": "2026-03-20T07:05:00Z"
+  },
+  {
+    "id": "mem_04",
+    "content": "Is building tidyfs, a Rust CLI that removes duplicate files.",
+    "created_at": "2026-04-11T21:30:00Z"
+  },
+  {
+    "id": "mem_05",
+    "content": "Interested in bouldering and Portuguese cooking.",
+    "created_at": "2026-05-01T12:00:00Z"
+  },
+  {
+    "id": "mem_06",
+    "content": "Phone number is +1 415 555 0134 for SMS reminders.",
+    "created_at": "2026-05-03T12:00:00Z"
+  }
+]

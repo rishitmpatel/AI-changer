@@ -1,0 +1,52 @@
+[
+  {
+    "uuid": "c0a1-0001",
+    "name": "Quarterly OKR draft",
+    "created_at": "2026-04-02T10:00:00.000000Z",
+    "updated_at": "2026-04-02T10:20:00.000000Z",
+    "account": {
+      "uuid": "8f1e0000-0000-4000-8000-000000000001"
+    },
+    "chat_messages": [
+      {
+        "uuid": "m1",
+        "text": "Help me draft OKRs for the platform team I manage at Northwind.",
+        "sender": "human",
+        "created_at": "2026-04-02T10:00:00.000000Z",
+        "updated_at": "2026-04-02T10:00:00.000000Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Help me draft OKRs for the platform team I manage at Northwind."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "m2",
+        "text": "",
+        "sender": "assistant",
+        "created_at": "2026-04-02T10:00:20.000000Z",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "internal"
+          },
+          {
+            "type": "text",
+            "text": "Here is a draft with three objectives: reliability, developer velocity…"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  },
+  {
+    "uuid": "c0a1-0002",
+    "name": "Empty chat",
+    "created_at": "2026-04-05T10:00:00Z",
+    "chat_messages": []
+  }
+]

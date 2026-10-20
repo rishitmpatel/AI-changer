@@ -1,0 +1,45 @@
+# Grok — see chatgpt.yaml for the format. Override in ~/.ai-switch/selectors/grok.yaml
+provider: grok
+display_name: Grok
+urls:
+  home: https://grok.com/
+  login: https://accounts.x.ai/sign-in
+  new_chat: https://grok.com/
+  settings: https://grok.com/?_s=data
+  data_export: https://accounts.x.ai/data
+allowed_domains: [grok.com, x.ai, challenges.cloudflare.com]
+memory_from_chat: true
+selectors:
+  logged_in: ['a[href="/chat"]', 'button[aria-label*="Profile"]', 'textarea', 'div[contenteditable="true"]']
+  chat_input: ['textarea', 'div[contenteditable="true"]']
+  send_button: ['button[type="submit"]', 'button[aria-label="Submit"]']
+  stop_button: ['button[aria-label="Stop"]', 'button[aria-label*="Stop"]']
+  assistant_message: ['div.message-bubble:not(.user) .response-content-markdown', '[data-testid="assistant-message"]', 'div.items-start .message-bubble']
+  user_message: ['div.items-end .message-bubble', '[data-testid="user-message"]']
+  conversation_link: ['a[href^="/chat/"]', 'a[href^="/c/"]']
+  customize_open: ['button:has-text("Customize")', 'text=Customize Grok']
+  custom_instructions: ['[role="dialog"] textarea', 'textarea[placeholder*="instructions"]']
+  save_button: ['[role="dialog"] button:has-text("Save")']
+flows:
+  export_profile:
+    - goto: home
+    - click: customize_open
+    - collect_value: custom_instructions
+  import_profile:
+    - goto: home
+    - click: customize_open
+    - append: {into: custom_instructions, text: "{part}"}
+    - click: save_button
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 20000
+import:
+  ask_ai: {style: remember, limit: 4000}
+  browser: {style: profile, limit: 3000}
+  clipboard: {style: remember, limit: 4000}
+manual_steps:
+  export_file: "grok.com → Settings → Data controls → Export account data (opens accounts.x.ai/data) → Download. The zip contains JSON."
+  export_memory: "Open https://grok.com/, paste the prompt and send it, then click Copy under the reply."
+  import_memory: "Open https://grok.com/, start a new chat, paste and send. Grok's memory saves details from chats (if Memory is on in Settings → Data controls)."
+  import_chats: "Grok has no chat-history import. Attach chat_history.md to a new chat, or add it to a Grok Project."
