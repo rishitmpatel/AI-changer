@@ -276,21 +276,26 @@ class BrowserManager:
     def _port_file(self) -> Path:
         return self.profile / "DevToolsActivePort"
 
+    def _port_parts(self) -> list[str] | None:
+        """(port, path) from DevToolsActivePort, or None while the browser is still writing it
+        (on Windows the half-written file can't even be opened: PermissionError)."""
+        pf = self._port_file()
+        if not self.is_running() or self.mode != "debug":
+            return None
+        try:
+            parts = pf.read_text(encoding="ascii", errors="replace").split()
+        except OSError:
+            return None
+        return parts if len(parts) == 2 and parts[0].isdigit() else None
+
     def endpoint(self) -> str | None:
         """ws:// URL of the running debug browser, or None."""
-        pf = self._port_file()
-        if not self.is_running() or self.mode != "debug" or not pf.exists():
-            return None
-        parts = pf.read_text().split()
-        if len(parts) != 2:
-            return None
-        return f"ws://127.0.0.1:{parts[0]}{parts[1]}"
+        parts = self._port_parts()
+        return f"ws://127.0.0.1:{parts[0]}{parts[1]}" if parts else None
 
     def http_endpoint(self) -> str | None:
-        pf = self._port_file()
-        if self.endpoint() is None:
-            return None
-        return f"http://127.0.0.1:{pf.read_text().split()[0]}"
+        parts = self._port_parts()
+        return f"http://127.0.0.1:{parts[0]}" if parts else None
 
     # ------------------------------------------------------------------ launching
     def launch_plain(self, url: str) -> None:

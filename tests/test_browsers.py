@@ -290,3 +290,24 @@ def test_sign_in_finishes_when_window_closes(tmp_path, monkeypatch, how):
         threading.Timer(0.5, done.set).start()
     assert service.sign_in("claude", cancel=done, poll=0.1, timeout=10) == SIGNED_IN
     assert mgr.closed_by_app == (how != "user closes window")
+
+
+def test_port_file_busy_or_partial_is_not_ready(tmp_path, monkeypatch):
+    """Chrome writes DevToolsActivePort while we poll it; on Windows the open can fail."""
+    mgr = BrowserManager(BrowserInfo("chromium", "x", "x"), profile=tmp_path)
+    mgr.mode = "debug"
+    monkeypatch.setattr(mgr, "is_running", lambda: True)
+    pf = tmp_path / "DevToolsActivePort"
+    assert mgr.endpoint() is None  # not written yet
+    pf.write_text("9222", encoding="ascii")
+    assert mgr.endpoint() is None  # half written
+    pf.write_text("9222\n/devtools/browser/abc\n", encoding="ascii")
+    assert mgr.endpoint() == "ws://127.0.0.1:9222/devtools/browser/abc"
+    assert mgr.http_endpoint() == "http://127.0.0.1:9222"
+    import pathlib
+
+    def locked(self, *a, **k):
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(pathlib.Path, "read_text", locked)
+    assert mgr.endpoint() is None  # Windows: file still locked by the browser
