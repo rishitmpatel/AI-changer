@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-switch</title>
+<style>
+  :root { --bg:#f7f7f5; --fg:#1d1d1b; --muted:#6b6b66; --card:#fff; --line:#deded8; --accent:#2f5d8a; --bad:#a33; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161615; --fg:#ececea; --muted:#9a9a94; --card:#20201f; --line:#34342f; --accent:#7fb0e0; --bad:#e88; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; }
+  .row > label { flex:1 1 200px; }
+  label { display:block; font-size:13px; color:var(--muted); }
+  select, input[type=text] { width:100%; padding:8px; margin-top:4px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; }
+  .checks label { display:inline-flex; gap:6px; align-items:center; margin-right:16px; color:var(--fg); font-size:14px; }
+  button { padding:8px 14px; border-radius:6px; border:1px solid var(--accent); background:var(--accent); color:#fff; font:inherit; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--accent); }
+  button:disabled { opacity:.5; cursor:default; }
+  pre { background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:10px; white-space:pre-wrap; max-height:420px; overflow:auto; font-size:13px; margin:0; }
+  #prompt { display:none; border-color:var(--accent); }
+  #err { color:var(--bad); white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>ai-switch</h1>
+  <p class="sub">Move your AI memory between assistants. Runs on this computer only; memory content stays in the output folder.</p>
+
+  <div class="card">
+    <div class="row">
+      <label>From <select id="source"></select></label>
+      <label>To <select id="target"></select></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label>Official export file of the source (optional, path on this computer)
+        <input type="text" id="export_path" placeholder="/Users/you/Downloads/export.zip"></label>
+    </div>
+    <div class="checks" style="margin-top:12px">
+      <label><input type="checkbox" id="chats"> Also move chat history</label>
+      <label><input type="checkbox" id="verify" checked> Verify afterwards</label>
+      <label><input type="checkbox" id="offline"> Offline (no browser automation)</label>
+    </div>
+    <div class="row" style="margin-top:14px; gap:8px">
+      <button id="move">Move memory</button>
+      <button id="export" class="ghost">Backup only</button>
+      <button id="login" class="ghost">Sign in to "From"</button>
+    </div>
+  </div>
+
+  <div class="card" id="prompt">
+    <div id="ptext"></div>
+    <input type="text" id="pvalue" style="margin:10px 0">
+    <button id="psend">Continue</button>
+  </div>
+
+  <div class="card">
+    <pre id="log">Ready.</pre>
+    <div id="err"></div>
+  </div>
+</main>
+<script>
+const token = new URLSearchParams(location.hash.slice(1)).get('token') || '';
+const H = {'Content-Type': 'application/json', 'X-Token': token};
+const $ = id => document.getElementById(id);
+let timer = null;
+
+async function api(path, body) {
+  const r = await fetch(path, body ? {method: 'POST', headers: H, body: JSON.stringify(body)} : {headers: H});
+  return r.json();
+}
+async function init() {
+  const ps = await api('/api/providers');
+  for (const sel of [$('source'), $('target')]) {
+    for (const p of ps) { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); }
+  }
+  $('target').selectedIndex = 1;
+}
+function busy(b) { for (const id of ['move', 'export', 'login']) $(id).disabled = b; }
+async function start(command) {
+  $('err').textContent = '';
+  busy(true);
+  const res = await api('/api/start', {command, source: $('source').value, target: $('target').value,
+    export_path: $('export_path').value.trim(), chats: $('chats').checked, verify: $('verify').checked, offline: $('offline').checked});
+  if (res.error) { $('err').textContent = res.error; busy(false); return; }
+  timer = setInterval(poll, 700);
+}
+async function poll() {
+  const s = await api('/api/status');
+  $('log').textContent = s.lines.join('\n') || '…';
+  $('log').scrollTop = $('log').scrollHeight;
+  const p = s.pending;
+  $('prompt').style.display = p ? 'block' : 'none';
+  if (p && $('ptext').dataset.text !== p.text) {
+    $('ptext').dataset.text = p.text;
+    $('ptext').textContent = p.text;
+    $('pvalue').style.display = p.kind === 'pause' ? 'none' : 'block';
+    $('pvalue').value = p.default || '';
+    $('psend').textContent = p.kind === 'pause' ? 'Done' : 'Continue';
+  }
+  if (s.done) {
+    clearInterval(timer); busy(false);
+    if (s.error) $('err').textContent = s.error;
+    else if (s.out_dir) $('log').textContent += '\n\nFiles: ' + s.out_dir;
+  }
+}
+$('psend').onclick = async () => { $('ptext').dataset.text = ''; await api('/api/answer', {value: $('pvalue').value}); };
+$('move').onclick = () => start('move');
+$('export').onclick = () => start('export');
+$('login').onclick = () => start('login');
+init();
+</script>
+</body>
+</html>

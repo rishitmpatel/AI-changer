@@ -1,0 +1,23 @@
+{
+  "conversations_v2": [
+    {
+      "title": "CafÃ© recommendations",
+      "id": "meta-01",
+      "timestamp": 1746100000,
+      "messages": [
+        {
+          "sender_name": "Alex Rivera",
+          "author": "user",
+          "timestamp_ms": 1746100000000,
+          "content": "Find me a quiet cafÃ© near Zilker Park â I work remotely as a backend engineer."
+        },
+        {
+          "sender_name": "Meta AI",
+          "author": "Meta AI",
+          "timestamp_ms": 1746100005000,
+          "content": "Try CafÃ© Medici on South Lamarâ¦"
+        }
+      ]
+    }
+  ]
+}

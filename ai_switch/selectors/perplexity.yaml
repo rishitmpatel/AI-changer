@@ -1,0 +1,48 @@
+# Perplexity — see chatgpt.yaml for the format.
+provider: perplexity
+display_name: Perplexity
+urls:
+  home: https://www.perplexity.ai/
+  login: https://www.perplexity.ai/?login-source=signupButton
+  new_chat: https://www.perplexity.ai/
+  personalize: https://www.perplexity.ai/account/personalize
+  memory: https://www.perplexity.ai/account/personalize/memory
+allowed_domains: [perplexity.ai, pplx.ai, challenges.cloudflare.com]
+memory_from_chat: true
+selectors:
+  logged_in: ['a[href="/library"]', 'a[href*="/account"]', 'textarea']
+  chat_input: ['#ask-input', 'textarea[placeholder*="Ask"]', 'div[contenteditable="true"]', 'textarea']
+  send_button: ['button[aria-label="Submit"]', 'button[aria-label*="Submit"]']
+  stop_button: ['button[aria-label*="Stop"]']
+  assistant_message: ['div[id^="markdown-content"]', '.prose']
+  user_message: ['h1[class*="query"]', 'div[class*="query"]']
+  conversation_link: ['a[href^="/search/"]']
+  memory_item: ['[data-testid*="memory-item"]', 'main li']
+  profile_box: ['textarea[name="bio"]', 'textarea[placeholder*="Introduce yourself"]', 'textarea[placeholder*="about yourself"]', 'main textarea']
+  save_button: ['button:has-text("Save")']
+flows:
+  export_memory:
+    - goto: memory
+    - wait: 1.5
+    - collect: memory_item
+  export_profile:
+    - goto: personalize
+    - collect_value: profile_box
+  import_profile:
+    - goto: personalize
+    - fill: {into: profile_box, text: "{part}"}
+    - click_optional: save_button
+    - wait: 1
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 8000
+import:
+  browser: {style: profile, limit: 1500}
+  ask_ai: {style: remember, limit: 3000}
+  clipboard: {style: profile, limit: 1500}
+manual_steps:
+  export_file: "Perplexity has no self-serve export; request your data via Settings → Account (or privacy request) and pass the file with --export."
+  export_memory: "Open https://www.perplexity.ai/account/personalize/memory and copy the list, or paste the prompt into a new thread and copy the reply."
+  import_memory: "Open https://www.perplexity.ai/account/personalize → 'Introduce yourself' box → paste → Save."
+  import_chats: "Perplexity has no chat-history import. Upload chat_history.md in a Space (Spaces → New → add files)."

@@ -1,0 +1,37 @@
+# Meta AI — see chatgpt.yaml for the format.
+provider: meta_ai
+display_name: Meta AI
+urls:
+  home: https://www.meta.ai/
+  login: https://www.meta.ai/
+  new_chat: https://www.meta.ai/
+  memory: https://www.meta.ai/settings/memory
+  download_info: https://accountscenter.meta.com/info_and_permissions/dyi/
+allowed_domains: [meta.ai, meta.com, facebook.com, fbcdn.net]
+memory_from_chat: true
+selectors:
+  logged_in: ['div[aria-label*="profile" i]', 'a[href*="/settings"]', 'textarea', 'div[contenteditable="true"]']
+  chat_input: ['textarea[placeholder*="Ask"]', 'div[contenteditable="true"][role="textbox"]', 'textarea']
+  send_button: ['div[aria-label="Send Message"]', 'button[aria-label*="Send"]']
+  stop_button: ['div[aria-label*="Stop"]', 'button[aria-label*="Stop"]']
+  assistant_message: ['div[data-testid="assistant-message"]', 'div[dir="auto"].x1lliihq']
+  user_message: ['div[data-testid="user-message"]']
+  conversation_link: ['a[href^="/c/"]', 'a[href^="/prompt/"]']
+  memory_item: ['[data-testid*="memory"]', 'main [role="listitem"]']
+flows:
+  export_memory:
+    - goto: memory
+    - wait: 1.5
+    - collect: memory_item
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 6000
+import:
+  ask_ai: {style: remember, limit: 2500}
+  clipboard: {style: remember, limit: 2500}
+manual_steps:
+  export_file: "Accounts Center → Your information and permissions → Download your information → choose Meta AI / AI interactions → JSON → Create files."
+  export_memory: "Open https://www.meta.ai/, paste the prompt and send it, then copy the reply. (Or profile → Memory and copy the items.)"
+  import_memory: "Open https://www.meta.ai/ (or the Meta AI app), start a new chat, paste and send. Meta AI confirms what it will remember (profile → Memory)."
+  import_chats: "Meta AI has no chat-history import. Paste the most important parts of chat_history.md into a new chat."

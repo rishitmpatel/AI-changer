@@ -1,0 +1,37 @@
+# Microsoft Copilot (consumer) — see chatgpt.yaml for the format.
+provider: copilot
+display_name: Microsoft Copilot
+urls:
+  home: https://copilot.microsoft.com/
+  login: https://copilot.microsoft.com/?showSignIn=true
+  new_chat: https://copilot.microsoft.com/
+  personalization: https://copilot.microsoft.com/settings/personalization
+  privacy_dashboard: https://account.microsoft.com/privacy/copilot
+allowed_domains: [copilot.microsoft.com, microsoft.com, bing.com, live.com, microsoftonline.com]
+memory_from_chat: true
+selectors:
+  logged_in: ['button[aria-label*="Profile"]', 'button[title*="Account"]', 'textarea#userInput', 'textarea']
+  chat_input: ['textarea#userInput', 'textarea[placeholder*="Message"]', 'textarea']
+  send_button: ['button[aria-label="Submit message"]', 'button[title="Submit message"]', 'button[aria-label*="Send"]']
+  stop_button: ['button[aria-label*="Stop"]']
+  assistant_message: ['[data-content="ai-message"]', 'div[class*="ai-message"]']
+  user_message: ['[data-content="user-message"]', 'div[class*="user-message"]']
+  conversation_link: ['a[href*="/chats/"]']
+  memory_item: ['[data-testid*="memory"]', 'section:has-text("Memory") li']
+flows:
+  export_memory:
+    - goto: personalization
+    - wait: 1.5
+    - collect: memory_item
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 10000
+import:
+  ask_ai: {style: remember, limit: 3500}
+  clipboard: {style: remember, limit: 3500}
+manual_steps:
+  export_file: "account.microsoft.com/privacy → Copilot → 'Copilot app activity history' → Export all activity history (CSV)."
+  export_memory: "Open https://copilot.microsoft.com/, paste the prompt into a new chat and send it, then copy the reply. (Or Settings → Personalization → Memory.)"
+  import_memory: "Open https://copilot.microsoft.com/, start a new chat, paste and send. Copilot replies that it will remember (Settings → Personalization → Memory must be on)."
+  import_chats: "Copilot has no chat-history import. Upload chat_history.md in a new chat (paperclip) to give it the context."

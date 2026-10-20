@@ -1,0 +1,96 @@
+[
+  {
+    "id": "ds-01",
+    "title": "SQL window functions",
+    "inserted_at": "2026-07-01T09:00:00.000000+08:00",
+    "updated_at": "2026-07-01T09:10:00.000000+08:00",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "parent": null,
+        "children": [
+          "1"
+        ],
+        "message": null
+      },
+      "1": {
+        "id": "1",
+        "parent": "root",
+        "children": [
+          "2"
+        ],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2026-07-01T09:00:00.000000+08:00",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "I'm a data analyst at Contoso. Explain ROW_NUMBER vs RANK."
+            }
+          ]
+        }
+      },
+      "2": {
+        "id": "2",
+        "parent": "1",
+        "children": [
+          "3"
+        ],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2026-07-01T09:00:00.000000+08:00",
+          "fragments": [
+            {
+              "type": "RESPONSE",
+              "content": "ROW_NUMBER gives unique sequential numbers; RANK leaves gaps on ties…"
+            },
+            {
+              "type": "THINK",
+              "content": "internal reasoning"
+            }
+          ]
+        }
+      },
+      "3": {
+        "id": "3",
+        "parent": "2",
+        "children": [
+          "4"
+        ],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2026-07-01T09:00:00.000000+08:00",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "I prefer examples in PostgreSQL."
+            }
+          ]
+        }
+      },
+      "4": {
+        "id": "4",
+        "parent": "3",
+        "children": [],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2026-07-01T09:00:00.000000+08:00",
+          "fragments": [
+            {
+              "type": "RESPONSE",
+              "content": "Sure, here is a PostgreSQL example…"
+            },
+            {
+              "type": "THINK",
+              "content": "internal reasoning"
+            }
+          ]
+        }
+      }
+    }
+  }
+]

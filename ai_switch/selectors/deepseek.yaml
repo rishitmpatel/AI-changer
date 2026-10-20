@@ -1,0 +1,29 @@
+# DeepSeek — see chatgpt.yaml for the format.
+provider: deepseek
+display_name: DeepSeek
+urls:
+  home: https://chat.deepseek.com/
+  login: https://chat.deepseek.com/sign_in
+  new_chat: https://chat.deepseek.com/
+allowed_domains: [deepseek.com]
+memory_from_chat: false          # no cross-chat memory: imports become a context primer
+selectors:
+  logged_in: ['textarea#chat-input', 'textarea']
+  chat_input: ['textarea#chat-input', 'textarea']
+  send_button: ['div[role="button"][aria-disabled="false"]:has(svg)', 'button[type="submit"]']
+  stop_button: ['div[role="button"]:has-text("Stop")']
+  assistant_message: ['div.ds-markdown', '.ds-message .ds-markdown']
+  user_message: ['div.fbb737a4', '[class*="user-message"]']
+  conversation_link: ['a[href^="/a/chat/s/"]']
+flows:
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 30000
+import:
+  ask_ai: {style: primer, limit: 20000}
+  clipboard: {style: primer, limit: 20000}
+manual_steps:
+  export_file: "chat.deepseek.com → Settings → Data → Export data (or email service@deepseek.com to request a copy)."
+  import_memory: "DeepSeek has no memory. Open https://chat.deepseek.com/, start a new chat, paste and send; continue that chat to keep the context."
+  import_chats: "DeepSeek has no chat-history import. Upload chat_history.md in a new chat (paperclip)."

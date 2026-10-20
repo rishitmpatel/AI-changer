@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>FakeAI</title><style>.msg{white-space:pre-wrap}</style></head>
+<body>
+<!-- A tiny stand-in for an assistant website, used by test_browser_e2e.py with real Chromium.
+     Memory lives in localStorage so it survives page loads inside the persistent profile. -->
+<nav><a id="me" href="#">Signed in</a> <a href="/memory.html">Memory</a></nav>
+<div id="thread"></div>
+<textarea id="input"></textarea>
+<button id="send">Send</button>
+<script src="https://tracker.third-party.example/pixel.js"></script>
+<script>
+const mem = () => JSON.parse(localStorage.getItem('mem') || '[]');
+const save = m => localStorage.setItem('mem', JSON.stringify(m));
+function add(cls, text) {
+  const d = document.createElement('div'); d.className = 'msg ' + cls; d.textContent = text;
+  document.getElementById('thread').appendChild(d); return d;
+}
+function reply(text) {
+  if (text.includes('BEGIN-MEMORY')) {
+    return 'Sure!\nBEGIN-MEMORY\n' + mem().map(m => '- ' + m).join('\n') + '\nEND-MEMORY';
+  }
+  if (/^please (also )?remember/i.test(text)) {
+    const m = mem(); text.split('\n').filter(l => l.startsWith('- ')).forEach(l => m.push(l.slice(2))); save(m);
+    return 'Memory updated.';
+  }
+  if (/what do you know about me/i.test(text)) return 'I know:\n' + mem().map(m => '- ' + m).join('\n');
+  return 'OK.';
+}
+document.getElementById('send').onclick = () => {
+  const box = document.getElementById('input'); const text = box.value; box.value = '';
+  add('user', text);
+  const out = add('assistant', '');
+  const full = reply(text); let i = 0;
+  const stop = document.createElement('button'); stop.id = 'stop'; stop.textContent = 'Stop';
+  document.body.appendChild(stop);
+  const t = setInterval(() => {            // stream the answer like a real assistant
+    i += 25; out.textContent = full.slice(0, i);
+    if (i >= full.length) { clearInterval(t); stop.remove(); }
+  }, 30);
+};
+if (!localStorage.getItem('mem') && location.search.includes('seed')) {
+  save(['Lives in Austin.', 'Prefers concise answers with code first.', 'Partner is named Sam.']);
+}
+</script>
+</body></html>

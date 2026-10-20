@@ -1,0 +1,58 @@
+# ChatGPT — URLs, page selectors, flows and limits.
+# A selector value may be one string or a list of alternatives (first visible match wins).
+# Playwright selector syntax: CSS, `text=…`, `button:has-text("…")`, `role=button[name="…"]`.
+# Fix a broken selector by copying this file to ~/.ai-switch/selectors/chatgpt.yaml and
+# editing only the line that changed (your copy is merged over this one).
+provider: chatgpt
+display_name: ChatGPT
+urls:
+  home: https://chatgpt.com/
+  login: https://chatgpt.com/auth/login
+  new_chat: https://chatgpt.com/
+  personalization: https://chatgpt.com/#settings/Personalization
+  data_controls: https://chatgpt.com/#settings/DataControls
+# Hosts the browser may load in strict-network mode (subdomains included). Everything else is blocked.
+# challenges.cloudflare.com is the bot check chatgpt.com embeds; removing it may break the site.
+allowed_domains: [chatgpt.com, openai.com, oaistatic.com, oaiusercontent.com, challenges.cloudflare.com]
+memory_from_chat: true
+selectors:
+  logged_in: ['[data-testid="accounts-profile-button"]', 'button[aria-label="Open profile menu"]', 'nav a[href^="/c/"]', '#prompt-textarea']
+  chat_input: ['#prompt-textarea', 'div[contenteditable="true"][id="prompt-textarea"]', 'textarea']
+  send_button: ['button[data-testid="send-button"]', 'button[aria-label="Send prompt"]']
+  stop_button: ['button[data-testid="stop-button"]', 'button[aria-label="Stop streaming"]']
+  assistant_message: ['[data-message-author-role="assistant"]']
+  user_message: ['[data-message-author-role="user"]']
+  conversation_link: ['nav a[href^="/c/"]', 'a[href^="/c/"]']
+  manage_memories: ['button:has-text("Manage memories")', 'button:has-text("Manage")', 'text=Manage memories']
+  memory_item: ['[role="dialog"] table tr td:first-child', '[role="dialog"] li', '[role="dialog"] [data-testid*="memory"]']
+  more_about_you: ['textarea[name="aboutYou"]', 'textarea[placeholder*="Interests"]', 'textarea[aria-label*="More about you"]', '[role="dialog"] textarea >> nth=-1']
+  custom_instructions: ['textarea[name="traits"]', 'textarea[aria-label*="instructions"]', '[role="dialog"] textarea >> nth=0']
+  save_button: ['button:has-text("Save")']
+flows:
+  export_memory:          # 2. official flow: read Settings → Personalization → Manage memories
+    - goto: personalization
+    - click: manage_memories
+    - wait: 1.5
+    - collect: memory_item
+  export_profile:         # 4. browser: read custom-instruction fields
+    - goto: personalization
+    - collect_value: more_about_you
+    - collect_value: custom_instructions
+  import_profile:         # 4. browser: write the summary into "More about you"
+    - goto: personalization
+    - fill: {into: more_about_you, text: "{part}"}
+    - click: save_button
+    - wait: 1
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 30000
+import:
+  ask_ai: {style: remember, limit: 4000}
+  browser: {style: profile, limit: 1500}       # "More about you" field limit
+  clipboard: {style: remember, limit: 4000}
+manual_steps:
+  export_file: "ChatGPT → your profile → Settings → Data controls → Export data → Confirm export. Download the zip from the email (link expires in 24 h)."
+  export_memory: "Open https://chatgpt.com/, paste the prompt into a new chat and send it. When the answer is complete, click the Copy icon under it. (Or open Settings → Personalization → Manage memories and copy the list.)"
+  import_memory: "Open https://chatgpt.com/, start a new chat, paste (Ctrl/Cmd+V) and press Send. Wait for 'Memory updated'."
+  import_chats: "ChatGPT has no chat-history import. Create a Project (sidebar → New project) and upload chat_history.md as a project file, or attach it to a new chat."

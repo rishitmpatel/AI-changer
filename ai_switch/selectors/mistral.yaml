@@ -1,0 +1,56 @@
+# Mistral Le Chat — see chatgpt.yaml for the format.
+provider: mistral
+display_name: Mistral Le Chat
+urls:
+  home: https://chat.mistral.ai/chat
+  login: https://chat.mistral.ai/login
+  new_chat: https://chat.mistral.ai/chat
+  memories: https://chat.mistral.ai/memories
+allowed_domains: [mistral.ai]
+memory_from_chat: true
+selectors:
+  logged_in: ['a[href="/memories"]', 'button[aria-label*="Account"]', 'textarea']
+  chat_input: ['textarea[placeholder*="Ask"]', 'div[contenteditable="true"]', 'textarea']
+  send_button: ['button[aria-label="Send question"]', 'button[type="submit"]']
+  stop_button: ['button[aria-label*="Stop"]']
+  assistant_message: ['div[data-message-author-role="assistant"]', '.markdown-container-style']
+  user_message: ['div[data-message-author-role="user"]']
+  conversation_link: ['a[href^="/chat/"]']
+  memory_item: ['[data-testid*="memory"]', 'main li']
+  import_button: ['button:has-text("Import")', 'text=Import from ChatGPT']
+  import_textbox: ['[role="dialog"] textarea']
+  import_submit: ['[role="dialog"] button:has-text("Import")', '[role="dialog"] button:has-text("Save")']
+  add_memory: ['button:has-text("Add memory")', 'button:has-text("New memory")', 'button:has-text("Add")']
+  memory_textbox: ['[role="dialog"] textarea', 'textarea']
+  memory_submit: ['[role="dialog"] button:has-text("Save")', 'button:has-text("Save")']
+flows:
+  export_memory:
+    - goto: memories
+    - wait: 1.5
+    - collect: memory_item
+  import_memory:          # 2. official: Memories → Import (built for ChatGPT memory text)
+    - goto: memories
+    - click: import_button
+    - fill: {into: import_textbox, text: "{part}"}
+    - click: import_submit
+    - wait: 3
+  import_profile:         # 4. add memories one by one
+    - goto: memories
+    - click: add_memory
+    - fill: {into: memory_textbox, text: "{part}"}
+    - click: memory_submit
+    - wait: 1
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 20000
+import:
+  official_flow: {style: lines_block, limit: 10000}
+  browser: {style: lines, limit: 1000, item_limit: 500}
+  ask_ai: {style: remember, limit: 4000}
+  clipboard: {style: block, limit: 10000}
+manual_steps:
+  export_file: "Le Chat has no documented consumer chat export; pass any file you obtained with --export."
+  export_memory: "Open https://chat.mistral.ai/memories and copy the list, or paste the prompt into a new chat and copy the reply."
+  import_memory: "Open https://chat.mistral.ai/memories → Import (or Add memory) → paste → Save. Memory must be enabled."
+  import_chats: "Le Chat has no chat-history import. Attach chat_history.md to a new chat or a Library."

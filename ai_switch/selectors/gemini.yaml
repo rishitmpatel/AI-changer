@@ -1,0 +1,69 @@
+# Gemini — see chatgpt.yaml for the format. Override in ~/.ai-switch/selectors/gemini.yaml
+provider: gemini
+display_name: Gemini
+urls:
+  home: https://gemini.google.com/app
+  login: https://accounts.google.com/ServiceLogin?continue=https://gemini.google.com/app
+  new_chat: https://gemini.google.com/app
+  saved_info: https://gemini.google.com/saved-info
+  takeout: https://takeout.google.com/
+allowed_domains: [gemini.google.com, google.com, gstatic.com, googleapis.com, googleusercontent.com]
+memory_from_chat: true
+selectors:
+  logged_in: ['a[aria-label^="Google Account"]', 'img.gb_P', 'rich-textarea']
+  chat_input: ['rich-textarea div[contenteditable="true"]', 'div.ql-editor[contenteditable="true"]', 'div[role="textbox"][contenteditable="true"]']
+  send_button: ['button[aria-label="Send message"]', 'button.send-button']
+  stop_button: ['button[aria-label="Stop response"]']
+  assistant_message: ['model-response message-content', 'message-content', '.model-response-text']
+  user_message: ['user-query .query-text', 'user-query']
+  conversation_link: ['a[href^="/app/"]']
+  settings_menu: ['button[aria-label*="Settings"]', 'button:has-text("Settings & help")', 'button:has-text("Settings")']
+  import_memory_entry: ['text=Import memory', 'button:has-text("Import memory")', 'text=Import memories']
+  import_memory_textbox: ['[role="dialog"] textarea', 'textarea[aria-label*="Paste"]']
+  import_memory_submit: ['[role="dialog"] button:has-text("Import")', 'button:has-text("Save")', 'button:has-text("Add")']
+  import_chats_entry: ['text=Import chats', 'button:has-text("Import chats")', 'text=Import chat history']
+  import_chats_file_input: ['input[type="file"]']
+  import_chats_submit: ['button:has-text("Import")', 'button:has-text("Upload")']
+  saved_info_item: ['saved-info-item .text', '[data-test-id="saved-info-item"]', 'mat-list-item']
+  saved_info_add: ['button:has-text("Add")', 'button[aria-label*="Add"]']
+  saved_info_textbox: ['[role="dialog"] textarea', 'textarea']
+  saved_info_submit: ['[role="dialog"] button:has-text("Submit")', 'button:has-text("Save")']
+flows:
+  export_memory:          # 2. read gemini.google.com/saved-info
+    - goto: saved_info
+    - wait: 1.5
+    - collect: saved_info_item
+  import_memory:          # 2. official (Mar 2026): Settings → Import memory → paste summary
+    - goto: home
+    - click: settings_menu
+    - click: import_memory_entry
+    - fill: {into: import_memory_textbox, text: "{part}"}
+    - click: import_memory_submit
+    - wait: 3
+  import_profile:         # 4. Saved info, one item per run
+    - goto: saved_info
+    - click: saved_info_add
+    - fill: {into: saved_info_textbox, text: "{part}"}
+    - click: saved_info_submit
+    - wait: 1
+  import_chats:           # official: Settings → Import chats → upload .zip (ChatGPT/Claude export layout)
+    - goto: home
+    - click: settings_menu
+    - click: import_chats_entry
+    - upload: {into: import_chats_file_input, file: "{file}"}
+    - click_optional: import_chats_submit
+    - wait: 5
+  export_chats:
+    - goto: home
+limits:
+  chat_message: 30000
+import:
+  official_flow: {style: block, limit: 15000}
+  browser: {style: lines, limit: 1000, item_limit: 500}
+  ask_ai: {style: remember, limit: 4000}
+  clipboard: {style: block, limit: 15000}
+manual_steps:
+  export_file: "takeout.google.com → Deselect all → tick 'My Activity' → 'All activity data included' → only 'Gemini Apps' → Multiple formats → Activity records: JSON → Export. Download the zip."
+  export_memory: "Open https://gemini.google.com/app, paste the prompt and send it, then click Copy under the reply. (Or open https://gemini.google.com/saved-info.)"
+  import_memory: "Open https://gemini.google.com/app → Settings & help → Import memory → paste → Import. (Personal accounts, 18+, outside EEA/CH/UK.)"
+  import_chats: "Open https://gemini.google.com/app → Settings & help → Import chats → upload conversations_chatgpt_format.zip. Processing can take up to a day."

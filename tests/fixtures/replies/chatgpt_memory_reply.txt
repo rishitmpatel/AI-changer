@@ -1,0 +1,20 @@
+Sure — here is everything I have saved about you:
+
+```
+BEGIN-MEMORY
+## Profile
+- [2026-02-14] Is a staff backend engineer at Northwind Labs who mostly writes Rust and Go.
+- [2026-02-20] Lives in Austin, Texas.
+## Preferences
+- [2026-03-02] Prefers concise answers with code first.
+- Uses metric units.
+## People
+- [2026-03-20] Partner is named Sam; they have a dog called Miso.
+## Projects
+- [2026-04-11] Is building tidyfs, an open-source Rust CLI that removes duplicate files, targeting a 1.0 release in July.
+## Topics
+- [2026-05-01] Interested in bouldering and Portuguese cooking.
+- [2026-05-03] Contact email is alex.rivera@example.com and phone +1 415 555 0134.
+END-MEMORY
+```
+Let me know if you'd like me to forget anything.

@@ -1,0 +1,187 @@
+[
+  {
+    "title": "Trip planning Lisbon",
+    "create_time": 1747000000,
+    "update_time": 1747000120,
+    "mapping": {
+      "client-created-root": {
+        "id": "client-created-root",
+        "message": null,
+        "parent": null,
+        "children": [
+          "6740a1b2-0001-sys"
+        ]
+      },
+      "6740a1b2-0001-sys": {
+        "id": "6740a1b2-0001-sys",
+        "parent": "client-created-root",
+        "children": [
+          "6740a1b2-0001-0"
+        ],
+        "message": {
+          "id": "6740a1b2-0001-sys",
+          "author": {
+            "role": "system",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              ""
+            ]
+          },
+          "status": "finished_successfully",
+          "metadata": {
+            "is_visually_hidden_from_conversation": true
+          }
+        }
+      },
+      "6740a1b2-0001-0": {
+        "id": "6740a1b2-0001-0",
+        "parent": "6740a1b2-0001-sys",
+        "children": [
+          "6740a1b2-0001-1",
+          "6740a1b2-0001-alt"
+        ],
+        "message": {
+          "id": "6740a1b2-0001-0",
+          "author": {
+            "role": "user",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1747000030,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "My name is Alex Rivera and I live in Austin. Can you plan 4 days in Lisbon in June?"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": false,
+          "weight": 1.0,
+          "metadata": {},
+          "recipient": "all"
+        }
+      },
+      "6740a1b2-0001-1": {
+        "id": "6740a1b2-0001-1",
+        "parent": "6740a1b2-0001-0",
+        "children": [
+          "6740a1b2-0001-2"
+        ],
+        "message": {
+          "id": "6740a1b2-0001-1",
+          "author": {
+            "role": "assistant",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1747000060,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Here is a 4-day Lisbon itinerary: Day 1 Alfama and Castelo de São Jorge…"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "model_slug": "gpt-5"
+          },
+          "recipient": "all"
+        }
+      },
+      "6740a1b2-0001-alt": {
+        "id": "6740a1b2-0001-alt",
+        "parent": "6740a1b2-0001-0",
+        "children": [],
+        "message": {
+          "id": "6740a1b2-0001-alt",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1747000060,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "(old regenerated answer)"
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "6740a1b2-0001-2": {
+        "id": "6740a1b2-0001-2",
+        "parent": "6740a1b2-0001-1",
+        "children": [
+          "6740a1b2-0001-3"
+        ],
+        "message": {
+          "id": "6740a1b2-0001-2",
+          "author": {
+            "role": "user",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1747000090,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "I prefer vegetarian restaurants and quiet neighbourhoods."
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": false,
+          "weight": 1.0,
+          "metadata": {},
+          "recipient": "all"
+        }
+      },
+      "6740a1b2-0001-3": {
+        "id": "6740a1b2-0001-3",
+        "parent": "6740a1b2-0001-2",
+        "children": [],
+        "message": {
+          "id": "6740a1b2-0001-3",
+          "author": {
+            "role": "assistant",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1747000120,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Noted — here are vegetarian picks in Príncipe Real and Campo de Ourique…"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "model_slug": "gpt-5"
+          },
+          "recipient": "all"
+        }
+      }
+    },
+    "moderation_results": [],
+    "current_node": "6740a1b2-0001-3",
+    "plugin_ids": null,
+    "conversation_id": "6740a1b2-0001",
+    "conversation_template_id": null,
+    "gizmo_id": null,
+    "is_archived": false,
+    "safe_urls": [],
+    "default_model_slug": "gpt-5",
+    "id": "6740a1b2-0001"
+  }
+]

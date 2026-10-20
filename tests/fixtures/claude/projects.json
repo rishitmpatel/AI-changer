@@ -1,0 +1,8 @@
+[
+  {
+    "uuid": "p-01",
+    "name": "tidyfs",
+    "description": "Rust CLI",
+    "docs": []
+  }
+]

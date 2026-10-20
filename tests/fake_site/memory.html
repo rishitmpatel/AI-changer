@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>FakeAI memory</title></head>
+<body>
+<nav><a id="me" href="#">Signed in</a></nav>
+<ul id="list"></ul>
+<button id="start-import">Start import</button>
+<div id="dialog" role="dialog" hidden><textarea id="import-box"></textarea><button id="add">Add to memory</button></div>
+<script>
+const mem = () => JSON.parse(localStorage.getItem('mem') || '[]');
+function render() {
+  const ul = document.getElementById('list'); ul.innerHTML = '';
+  mem().forEach(m => { const li = document.createElement('li'); li.className = 'item'; li.textContent = m; ul.appendChild(li); });
+}
+document.getElementById('start-import').onclick = () => { document.getElementById('dialog').hidden = false; };
+document.getElementById('add').onclick = () => {
+  const m = mem();
+  document.getElementById('import-box').value.split('\n').map(l => l.replace(/^[-*]\s+/, '').trim())
+    .filter(l => l && !l.startsWith('#') && !l.startsWith('Here is what')).forEach(l => m.push(l));
+  localStorage.setItem('mem', JSON.stringify(m));
+  document.getElementById('dialog').hidden = true; render();
+};
+render();
+</script>
+</body></html>
