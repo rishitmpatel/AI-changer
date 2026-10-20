@@ -279,8 +279,9 @@ If no WebView is available, it opens in Edge/Chrome "app mode" instead. Run it f
 
 `AI Switch.exe --self-test report.json --with-browser` checks a build: adapters, selectors, UI assets, the
 local server, the bundled Playwright driver, and a CDP round trip with the system browser. CI runs it, and
-also opens the real window (`--smoke-seconds 15`) on every push. Pushing a tag such as `v1.0.0` publishes
-both zips as a GitHub Release (`.github/workflows/build.yml`).
+also opens the real window on every push. Pushing a tag such as `v1.0.0`, or running the **build** workflow
+manually with *release_tag* = `v1.0.0` (Actions → build → Run workflow), builds and smoke-tests both apps, then
+publishes both zips as a GitHub Release (`.github/workflows/build.yml`).
 
 The older `ai-switch gui` (a minimal browser page) still works.
 
