@@ -12,7 +12,9 @@ from typing import Callable
 class Console:
     def __init__(self, interactive: bool | None = None, out=None) -> None:
         self.out = out or sys.stdout
-        self.interactive = sys.stdin.isatty() if interactive is None else interactive
+        # windowed apps (AI Switch.exe) have no stdin/stdout at all
+        has_tty = bool(sys.stdin is not None and hasattr(sys.stdin, "isatty") and sys.stdin.isatty())
+        self.interactive = has_tty if interactive is None else interactive
 
     def info(self, msg: str) -> None:
         print(msg, file=self.out, flush=True)

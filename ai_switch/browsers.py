@@ -250,9 +250,24 @@ class BrowserManager:
 
     def _base_args(self) -> list[str]:
         args = [self.browser.path, f"--user-data-dir={self.profile}", "--no-first-run", "--no-default-browser-check"]
-        if sys.platform.startswith("linux") and hasattr(os, "geteuid") and os.geteuid() == 0:
-            args.append("--no-sandbox")  # Chromium refuses to run as root otherwise (containers/CI)
+        if no_sandbox_needed():
+            args.append("--no-sandbox")
         return args + list(self.extra_args)
+
+    def _popen(self, args: list[str]) -> subprocess.Popen:
+        log_path = home_dir() / "logs" / "browser.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        self._stderr = open(log_path, "ab")  # the browser's own messages, for "Details" when it won't start
+        self._stderr_path = log_path
+        return subprocess.Popen(args, **_popen_kwargs(self._stderr))
+
+    def _last_browser_error(self) -> str:
+        try:
+            lines = [ln for ln in self._stderr_path.read_text("utf-8", "replace").splitlines()
+                     if "FATAL" in ln or ("ERROR" in ln and "dbus" not in ln)]
+            return lines[-1][-200:] if lines else ""
+        except Exception:
+            return ""
 
     # ------------------------------------------------------------------ state
     def is_running(self) -> bool:
@@ -282,7 +297,7 @@ class BrowserManager:
         """Start the browser exactly like a person would (no debugging switches)."""
         self.close()
         self.profile.mkdir(parents=True, exist_ok=True)
-        self.proc = subprocess.Popen(self._base_args() + ["--new-window", url], **_popen_kwargs())
+        self.proc = self._popen(self._base_args() + ["--new-window", url])
         self.mode = "plain"
         self.visible = True
         log.info("browser started for sign-in (%s, no debugging port)", self.browser.kind)
@@ -297,12 +312,13 @@ class BrowserManager:
             self._port_file().unlink()
         except FileNotFoundError:
             pass
-        self.proc = subprocess.Popen(self._base_args() + ["--remote-debugging-port=0", "about:blank"], **_popen_kwargs())
+        self.proc = self._popen(self._base_args() + ["--remote-debugging-port=0", "about:blank"])
         self.mode = "debug"
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             if self.proc.poll() is not None:
-                raise MethodFailed("the browser closed straight after starting",
+                detail = self._last_browser_error()
+                raise MethodFailed("the browser closed straight after starting" + (f" ({detail})" if detail else ""),
                                    hint="Close every window of the AI Switch browser and try again.")
             ws = self.endpoint()
             if ws:
@@ -349,6 +365,9 @@ class BrowserManager:
             except Exception:
                 pass
         self.proc, self.mode = None, None
+        if getattr(self, "_stderr", None):
+            self._stderr.close()
+            self._stderr = None
 
     # ------------------------------------------------------------------ browser-level helpers
     def cdp(self) -> CDP:
@@ -383,8 +402,17 @@ class BrowserManager:
             cdp.close()
 
 
-def _popen_kwargs() -> dict[str, Any]:
-    kw: dict[str, Any] = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "stdin": subprocess.DEVNULL}
+def no_sandbox_needed() -> bool:
+    """Chromium's sandbox can't start as root, or where unprivileged user namespaces are blocked
+    (Ubuntu 24.04+ CI with a downloaded Chromium). Installed Edge/Chrome never need this."""
+    if os.environ.get("AI_SWITCH_NO_SANDBOX") == "1":
+        return True
+    return sys.platform.startswith("linux") and hasattr(os, "geteuid") and os.geteuid() == 0
+
+
+def _popen_kwargs(stderr: Any = None) -> dict[str, Any]:
+    kw: dict[str, Any] = {"stdout": subprocess.DEVNULL, "stderr": stderr or subprocess.DEVNULL,
+                          "stdin": subprocess.DEVNULL}
     if sys.platform.startswith("win"):  # pragma: no cover
         kw["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     else:

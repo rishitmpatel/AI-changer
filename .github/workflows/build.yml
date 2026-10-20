@@ -35,7 +35,10 @@ jobs:
           $env:AI_SWITCH_HOME = "$pwd\smoke-home"
           $p = Start-Process -FilePath "dist\AI Switch\AI Switch.exe" -ArgumentList "--self-test", "`"$pwd\selftest.json`"", "--with-browser" -Wait -PassThru
           Get-Content selftest.json
-          if ($p.ExitCode -ne 0) { Write-Error "self-test failed ($($p.ExitCode))"; exit 1 }
+          if ($p.ExitCode -ne 0) {
+            Get-Content "smoke-home\logs\ai-switch.log" -ErrorAction SilentlyContinue
+            Write-Error "self-test failed ($($p.ExitCode))"; exit 1
+          }
       - name: Smoke test — open the app window and check the UI loads
         shell: pwsh
         timeout-minutes: 5

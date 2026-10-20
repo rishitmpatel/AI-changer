@@ -18,6 +18,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -108,7 +109,11 @@ def _server_roundtrip() -> int:
         page = urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=10).read()
         _require(b"AI Switch" in page, len(page))
         req = urllib.request.Request(f"http://127.0.0.1:{port}/api/state", headers={"X-Token": token})
-        state = json.load(urllib.request.urlopen(req, timeout=10))
+        try:
+            state = json.load(urllib.request.urlopen(req, timeout=10))
+        except urllib.error.HTTPError as exc:  # show the server's own error in the report
+            body = exc.read().decode("utf-8", "replace")
+            raise AssertionError(f"/api/state returned {exc.code}: {body[-1500:]}") from None
         return _require(len(state["providers"]) == 9, len(state["providers"]))
     finally:
         server.shutdown()
@@ -174,7 +179,9 @@ def open_window(url: str, services: Any, smoke: dict[str, Any] | None = None) ->
     if b is not None:
         args = [b.path, f"--app={url}", f"--user-data-dir={home_dir() / 'ui-profile'}", "--window-size=1080,700",
                 "--no-first-run", "--no-default-browser-check"]
-        if sys.platform.startswith("linux") and hasattr(os, "geteuid") and os.geteuid() == 0:
+        from ..browsers import no_sandbox_needed
+
+        if no_sandbox_needed():
             args.append("--no-sandbox")
         proc = subprocess.Popen(args)
         if smoke is not None:

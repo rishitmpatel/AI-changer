@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import sys
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -24,6 +25,10 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def isolated_home(tmp_path, monkeypatch):
     home = tmp_path / "ai-switch-home"
     monkeypatch.setenv("AI_SWITCH_HOME", str(home))
+    if sys.platform.startswith("linux"):
+        # Playwright's downloaded Chromium has no AppArmor profile, so on Ubuntu 24.04+ its sandbox
+        # can't start (Playwright itself always passes --no-sandbox on Linux). Real installs don't need this.
+        monkeypatch.setenv("AI_SWITCH_NO_SANDBOX", "1")
     return home
 
 

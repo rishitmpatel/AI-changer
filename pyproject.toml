@@ -17,7 +17,7 @@ clipboard = ["pyperclip>=1.8"]
 all = ["playwright>=1.45", "pyperclip>=1.8"]
 app = ["playwright>=1.45", "pyperclip>=1.8", "pywebview>=5.0"]
 build = ["playwright>=1.45", "pyperclip>=1.8", "pywebview>=5.0", "pyinstaller>=6.6", "pyinstaller-hooks-contrib>=2024.6"]
-dev = ["pytest>=8", "playwright>=1.45", "pyperclip>=1.8", "jsonschema>=4", "pywebview>=5.0"]
+dev = ["pytest>=8", "playwright>=1.45", "pyperclip>=1.8", "jsonschema>=4", "pywebview>=5.0", "Pillow>=10"]
 
 [project.scripts]
 ai-switch = "ai_switch.cli:main"

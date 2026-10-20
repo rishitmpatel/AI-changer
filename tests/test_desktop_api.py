@@ -219,3 +219,17 @@ def test_update_fixes_sanitises(app_services, isolated_home):
     assert cfg.selector("send_button") == ["button#brand-new"]
     assert not cfg.host_allowed("evil.example")
     assert cfg.url("home") == "https://claude.ai/new" and "exfiltrate" not in cfg.data
+
+
+def test_works_without_stdin_or_stdout(monkeypatch, app_services):
+    """AI Switch.exe is a windowed app: sys.stdin and sys.stdout are None there."""
+    import sys
+
+    from ai_switch.ui import Console
+
+    monkeypatch.setattr(sys, "stdin", None)
+    monkeypatch.setattr(sys, "stdout", None)
+    console = Console()
+    assert console.interactive is False
+    console.info("no crash without stdout")
+    assert len(app_services.provider_list()) == 9
