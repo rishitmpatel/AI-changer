@@ -8,6 +8,11 @@ urls:
   settings: https://grok.com/?_s=data
   data_export: https://accounts.x.ai/data
 allowed_domains: [grok.com, x.ai, challenges.cloudflare.com]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [sso, sso-rw]
+  domains: [grok.com, x.ai]
 memory_from_chat: true
 selectors:
   logged_in: ['a[href="/chat"]', 'button[aria-label*="Profile"]', 'textarea', 'div[contenteditable="true"]']

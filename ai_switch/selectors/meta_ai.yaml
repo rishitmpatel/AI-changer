@@ -8,6 +8,11 @@ urls:
   memory: https://www.meta.ai/settings/memory
   download_info: https://accountscenter.meta.com/info_and_permissions/dyi/
 allowed_domains: [meta.ai, meta.com, facebook.com, fbcdn.net]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [abra_sess, c_user]
+  domains: [meta.ai, facebook.com]
 memory_from_chat: true
 selectors:
   logged_in: ['div[aria-label*="profile" i]', 'a[href*="/settings"]', 'textarea', 'div[contenteditable="true"]']

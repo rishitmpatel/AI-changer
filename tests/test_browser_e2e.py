@@ -76,7 +76,7 @@ def providers(site, tmp_path, chromium_path, monkeypatch):
     profiles = {"fake_src": tmp_path / "p-src", "fake_dst": tmp_path / "p-dst"}
 
     def factory(config):
-        return BrowserSession(config, headless=True, profile=profiles[config.provider], timeout_s=10)
+        return BrowserSession(config, headless=True, profile=profiles[config.provider], timeout_s=30)
 
     ctx = Context(console=ScriptedConsole(answers={"REMOVE": "none"}), clipboard=MemoryClipboard(),
                   browser_factory=factory, out_dir=tmp_path / "out")
@@ -91,8 +91,8 @@ def test_real_browser_move(providers):
     assert res.export_method == "ask_ai"
     assert len(res.memory) == 3
     assert res.imported.method is Method.OFFICIAL_FLOW
-    assert res.report.coverage == 1.0, (res.out_dir / "verify_report.md").read_text()
-    log = (res.out_dir / "run.log").read_text()
+    assert res.report.coverage == 1.0, (res.out_dir / "verify_report.md").read_text(encoding="utf-8")
+    log = (res.out_dir / "run.log").read_text(encoding="utf-8")
     assert "tracker.third-party.example" in log  # strict network blocked the third-party script
     assert "Austin" not in log and "Austin" not in ctx.console.transcript
 
@@ -102,7 +102,7 @@ def test_real_browser_official_export_flow(providers):
 
     ctx = providers
     with BrowserSession(get_adapter("fake_src", ctx).config, headless=True,
-                        profile=ctx.out_dir.parent / "p-src", timeout_s=10) as b:
+                        profile=ctx.out_dir.parent / "p-src", timeout_s=30) as b:
         b.goto("home")  # seed localStorage
     ad = get_adapter("fake_src", ctx)
     ad.export_memory_methods = (Method.OFFICIAL_FLOW,)

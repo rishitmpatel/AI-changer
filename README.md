@@ -1,8 +1,58 @@
-# ai-switch
+# AI Switch
 
 Move your **memory**, and optionally your **chat history**, from one AI assistant to another, in either direction.
 
-Supported: **ChatGPT · Claude · Gemini · Grok · Microsoft Copilot · Perplexity · Meta AI · DeepSeek · Mistral Le Chat**
+**ChatGPT · Claude · Gemini · Grok · Microsoft Copilot · Perplexity · Meta AI · DeepSeek · Le Chat (Mistral)**
+
+## Download → extract → double-click
+
+1. Open **[Releases](https://github.com/rishitmpatel/AI-changer/releases/latest)** and download
+   **`AI-Switch-Windows.zip`** (Windows 10/11) or **`AI-Switch-macOS.zip`** (macOS 11+).
+2. **Extract** the zip (right-click → *Extract All…* on Windows).
+3. **Double-click `AI Switch.exe`** in the extracted `AI Switch` folder. On a Mac, drag *AI Switch* to
+   Applications, then right-click it → **Open**.
+
+That's it: no Python, no terminal, no installer. AI Switch uses the **Microsoft Edge** (built into Windows)
+or **Google Chrome** you already have. If neither exists, it offers to download Chromium for you.
+
+> **"Windows protected your PC"?** The app isn't code-signed yet, so Microsoft SmartScreen shows this the
+> first time. Click **More info → Run anyway**.
+> **macOS "can't be opened"?** Right-click the app → **Open** → **Open**. If macOS says the app is
+> damaged, run `xattr -cr "/Applications/AI Switch.app"` once in Terminal.
+
+### Using it
+
+1. **Pick From and To.** Click the AI your memory is in now and the AI it should go to (⇄ swaps them).
+   Turn on *Also move chat history* if the target supports it.
+2. **Click Start.** If you're not signed in to one of them, a *Sign in* button appears. It opens that AI in
+   AI Switch's own browser window, where you sign in normally (Google sign-in, passkeys and 2FA all work).
+   AI Switch notices when you're signed in, or you can just close that window. You only do this once per AI.
+3. **Check before sending.** AI Switch lists any phone numbers, emails, addresses or ID numbers it found.
+   Ticked items are removed. Use the 👁 icon to see one in full, and *Preview* to edit or delete any fact.
+4. **Done.** You see "Moved X of Y facts". Anything the target didn't recall has already been re-sent once,
+   and *Retry missing* tries again. *Open output folder* shows `memory.json`, `memory.md` and the reports.
+
+The app stops for you only at the privacy check, a sign-in, a "verify you are human" check, or if every
+automatic method failed. In that last case a card tells you exactly where to paste, and the app continues
+by itself once it sees you did.
+
+**Privacy:** your memory goes only to the two AI websites you picked. No analytics, no other servers.
+"Update fixes" (Settings) downloads page-selector files from this repository and sends nothing about you.
+
+### Where AI Switch keeps things
+
+| What | Windows | macOS |
+|---|---|---|
+| Settings, history, sign-ins (browser profile), logs | `%APPDATA%\AI Switch` | `~/Library/Application Support/AI Switch` |
+| Your exported memory and reports | `Documents\AI Switch` (change in Settings) | `~/Documents/AI Switch` |
+
+*Settings → Reset sign-ins* deletes the AI Switch browser profile. Your everyday browser is never touched.
+
+---
+
+# Command line and development
+
+The same engine is available as the `ai-switch` command for scripting.
 
 ```
 ai-switch move --from chatgpt --to claude --export ~/Downloads/chatgpt-export.zip --chats
@@ -13,11 +63,6 @@ ai-switch move --from chatgpt --to claude --export ~/Downloads/chatgpt-export.zi
 3. **Import** into the target, split to fit its input box and rewritten in the form it accepts best.
 4. **Verify.** Asks the target "What do you know about me?", reports which facts are missing, and offers to re-send them.
 
-Everything runs on your own computer. The tool contacts only the two providers' websites, through a
-browser you sign into once. It has no servers, analytics or telemetry.
-
----
-
 ## Install
 
 Python 3.11 or newer.
@@ -26,8 +71,10 @@ Python 3.11 or newer.
 git clone <this repo> ai-switch && cd ai-switch
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e ".[all]"                                 # PyYAML + Playwright + pyperclip
-python -m playwright install chrome                     # or: chromium
 ```
+
+The CLI drives your installed Edge/Chrome over CDP (no browser download needed). Without one, add
+`--playwright-browser` and run `python -m playwright install chromium` once.
 
 Without Playwright the tool still works using export files and the clipboard:
 `pip install -e .` and add `--offline` to any command.
@@ -36,7 +83,7 @@ To use your own Chrome or Chromium binary, set `AI_SWITCH_BROWSER_PATH=/path/to/
 
 ## One-time login
 
-ai-switch keeps its own browser profile at `~/.ai-switch/browser-profile`, separate from your everyday
+AI Switch keeps its own browser profile (see the table above for where), separate from your everyday
 browser. Sign in once per provider. Passkeys, 2FA and Google/Microsoft/Apple sign-in all work.
 
 ```bash
@@ -44,8 +91,9 @@ ai-switch login chatgpt
 ai-switch login claude
 ```
 
-A browser window opens. Sign in, then press Enter in the terminal. The session is saved, and later runs
-reuse it. `login` is the only command that lets the browser reach single-sign-on hosts.
+Your Edge/Chrome opens normally, with no automation attached, so Google doesn't block the sign-in. Sign in
+and AI Switch detects it from the login cookie, or you can just close the window. Later runs reuse the
+session. How this works and why: [`docs/sign-in.md`](docs/sign-in.md).
 
 ## Commands
 
@@ -167,16 +215,25 @@ Websites change. When a step fails, the message says which **selector key** fail
 
 ```
 ! ChatGPT: method 2 official in-app flow → could not find 'manage_memories' on ChatGPT (tried 3 selector(s))
-      hint: The site layout probably changed. Edit selectors.manage_memories in ~/.ai-switch/selectors/chatgpt.yaml
+      hint: The site layout probably changed. Click 'Update fixes', or edit selectors.manage_memories in …/AI Switch/selectors/chatgpt.yaml
 ```
 
-The tool falls back to the next method on its own, so the run usually still finishes. To fix the selector permanently:
+Before giving up on a selector, AI Switch tries to **self-heal**: it looks for the element by role, label,
+placeholder, aria-label or visible text (for example a button named "Add to memory"). If that fails, it
+falls back to the next method on its own, so the run usually still finishes.
+
+**Easiest fix: Settings → Update fixes.** This downloads the latest `selectors/*.yaml` from this repository's
+`main` branch into `<app data>/fixes/`. Downloaded files can change selectors and flows but never the
+allowed domains, and every URL must stay on the provider's own site. If the repository is private, paste a
+read-only GitHub token under *Private repository?*.
+
+To fix a selector yourself:
 
 1. Open the page in Chrome, right-click the button or box → **Inspect**, and find a stable attribute (`data-testid`, `aria-label`, `placeholder`, or visible text).
 2. Create an override file holding only the key that changed. It is merged over the built-in file and survives upgrades:
 
    ```yaml
-   # ~/.ai-switch/selectors/chatgpt.yaml
+   # %APPDATA%\AI Switch\selectors\chatgpt.yaml   (macOS: ~/Library/Application Support/AI Switch/selectors/, Linux: ~/.ai-switch/selectors/)
    selectors:
      manage_memories: 'button:has-text("Manage memory")'
    ```
@@ -212,22 +269,27 @@ Override `parse_export(self, bundle)` if the provider has a documented export la
 tolerant generic parser finds conversations and memory lists in any JSON/CSV. Add a fake export to
 `tests/fixtures/<name>/` and a row in `tests/test_exports.py`.
 
-## Local GUI
+## Desktop app internals
 
-```bash
-ai-switch gui            # opens http://127.0.0.1:8765/#token=…
-```
+`ai_switch/desktop/` is the app: a local HTTP API on `127.0.0.1` (per-run token) plus the UI in
+`ai_switch/web/app/`, shown in a native window by **pywebview** (WebView2 on Windows, WKWebView on macOS).
+If no WebView is available, it opens in Edge/Chrome "app mode" instead. Run it from source with
+`pip install -e ".[app]"` then `ai-switch-app`. Build it with `pip install -e ".[build]"` then
+`pyinstaller packaging/ai-switch.spec`.
 
-The GUI runs the same flow as the CLI. Questions, such as which identifiers to remove, and "click Done when
-finished" pauses appear in the page. It listens on 127.0.0.1 only and needs the per-run token. It is a
-small local web page, so it works on Python builds without Tkinter.
+`AI Switch.exe --self-test report.json --with-browser` checks a build: adapters, selectors, UI assets, the
+local server, the bundled Playwright driver, and a CDP round trip with the system browser. CI runs it, and
+also opens the real window (`--smoke-seconds 15`) on every push. Pushing a tag such as `v1.0.0` publishes
+both zips as a GitHub Release (`.github/workflows/build.yml`).
+
+The older `ai-switch gui` (a minimal browser page) still works.
 
 ## Development
 
 ```bash
 pip install -e ".[dev]"
-pytest -q                 # 141 tests: every provider's sample export, privacy, chunking, fallbacks,
-                          # the full move flow, CLI, GUI, and a real-Chromium run against a local fake site
+pytest -q                 # every provider's sample export, privacy, chunking, fallbacks, the move flow,
+                          # CLI, desktop API + UI (real Chromium), sign-in detection, self-healing, packaging
 python tests/make_fixtures.py tests/fixtures   # regenerate the fake sample exports
 ```
 

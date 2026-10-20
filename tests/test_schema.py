@@ -23,7 +23,7 @@ def test_roundtrip(tmp_path):
     doc.save(path)
     loaded = MemoryDoc.load(path)
     assert loaded.to_dict() == doc.to_dict()
-    assert set(json.loads(path.read_text())["categories"]) == set(CATEGORIES)
+    assert set(json.loads(path.read_text(encoding="utf-8"))["categories"]) == set(CATEGORIES)
     if sys.platform != "win32":
         assert oct(path.stat().st_mode & 0o777) == "0o600"
 
@@ -72,12 +72,12 @@ def test_to_date(value, expected):
 
 def test_json_schema_files_agree_with_validator():
     jsonschema = pytest.importorskip("jsonschema")
-    schema = json.loads((SCHEMA_DIR / "memory.schema.json").read_text())
+    schema = json.loads((SCHEMA_DIR / "memory.schema.json").read_text(encoding="utf-8"))
     jsonschema.validate(sample_doc().to_dict(), schema)
-    chats = json.loads((SCHEMA_DIR / "chats.schema.json").read_text())
+    chats = json.loads((SCHEMA_DIR / "chats.schema.json").read_text(encoding="utf-8"))
     jsonschema.validate(ChatArchive("x", [Conversation("1", "t", "x", [Message("user", "a")])]).to_dict(), chats)
 
 
 def test_schema_files_are_valid_json():
     for f in SCHEMA_DIR.glob("*.json"):
-        assert json.loads(f.read_text())["type"] == "object"
+        assert json.loads(f.read_text(encoding="utf-8"))["type"] == "object"

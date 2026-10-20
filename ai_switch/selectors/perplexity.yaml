@@ -8,6 +8,11 @@ urls:
   personalize: https://www.perplexity.ai/account/personalize
   memory: https://www.perplexity.ai/account/personalize/memory
 allowed_domains: [perplexity.ai, pplx.ai, challenges.cloudflare.com]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [__Secure-next-auth.session-token*]
+  domains: [perplexity.ai]
 memory_from_chat: true
 selectors:
   logged_in: ['a[href="/library"]', 'a[href*="/account"]', 'textarea']

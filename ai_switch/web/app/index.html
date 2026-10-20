@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Switch</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><img src="icon.svg" alt="" width="28" height="28"><span>AI Switch</span></div>
+    <button class="nav" data-go="home" aria-current="page"><span class="ico" data-ico="move"></span>Move</button>
+    <button class="nav" data-go="accounts"><span class="ico" data-ico="user"></span>Accounts</button>
+    <button class="nav" data-go="history"><span class="ico" data-ico="clock"></span>History</button>
+    <button class="nav" data-go="settings"><span class="ico" data-ico="gear"></span>Settings</button>
+    <div class="side-foot"><span id="version">v–</span></div>
+  </nav>
+
+  <main id="main" tabindex="-1">
+    <!-- HOME -->
+    <section class="screen" id="screen-home" aria-labelledby="home-title">
+      <header class="head">
+        <h1 id="home-title">Move your AI memory</h1>
+        <p class="sub">Pick where your memory is now and where it should go. Everything runs on this computer.</p>
+      </header>
+      <div class="pickers">
+        <div class="picker card">
+          <h2 id="from-label">From</h2>
+          <div class="tiles" role="radiogroup" aria-labelledby="from-label" id="from-tiles"></div>
+        </div>
+        <button class="swap" id="swap" type="button" aria-label="Swap From and To" title="Swap">⇄</button>
+        <div class="picker card">
+          <h2 id="to-label">To</h2>
+          <div class="tiles" role="radiogroup" aria-labelledby="to-label" id="to-tiles"></div>
+        </div>
+      </div>
+      <div class="options card">
+        <label class="switch" id="chats-wrap">
+          <input type="checkbox" id="chats" role="switch">
+          <span class="track" aria-hidden="true"></span>
+          <span class="switch-label">Also move chat history</span>
+        </label>
+        <span class="muted small" id="chats-why" role="note"></span>
+        <details class="exportfile">
+          <summary>Use export file <span class="muted">(optional, more complete)</span></summary>
+          <div class="row">
+            <input type="text" id="export-path" placeholder="No file chosen — AI Switch will ask the AI instead" aria-label="Export file path">
+            <button class="btn ghost" id="pick-export" type="button">Choose…</button>
+            <button class="btn ghost" id="clear-export" type="button" aria-label="Clear export file">✕</button>
+          </div>
+          <p class="muted small" id="export-help"></p>
+        </details>
+      </div>
+      <div class="start-row">
+        <p class="muted small" id="start-hint" aria-live="polite"></p>
+        <button class="btn primary big" id="start" type="button" disabled>Start</button>
+      </div>
+    </section>
+
+    <!-- PROGRESS (+ cards, privacy review) -->
+    <section class="screen" id="screen-progress" hidden aria-labelledby="progress-title">
+      <header class="head row-between">
+        <div>
+          <h1 id="progress-title">Moving…</h1>
+          <p class="sub" id="progress-sub"></p>
+        </div>
+        <label class="switch compact" title="Show or minimise the browser AI Switch is using">
+          <input type="checkbox" id="show-browser" role="switch">
+          <span class="track" aria-hidden="true"></span>
+          <span class="switch-label">Show browser</span>
+        </label>
+      </header>
+      <ol class="stepper" id="stepper" aria-label="Steps"></ol>
+      <div class="bar" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" id="bar"><span id="bar-fill"></span></div>
+      <div id="card-area"></div>
+      <div class="card log">
+        <ul id="lines" aria-live="polite" aria-label="Status"></ul>
+      </div>
+      <div class="row-end"><button class="btn ghost" id="cancel" type="button">Stop</button></div>
+    </section>
+
+    <!-- DONE / ERROR -->
+    <section class="screen" id="screen-done" hidden aria-labelledby="done-title">
+      <div class="card result" id="result-card">
+        <div class="result-icon" id="result-icon" aria-hidden="true">✓</div>
+        <h1 id="done-title">Done</h1>
+        <p class="sub" id="done-sub"></p>
+        <div id="missing-wrap" hidden>
+          <h2 class="small-h">Not recalled yet</h2>
+          <ul class="missing" id="missing"></ul>
+        </div>
+        <p class="muted small" id="done-note"></p>
+        <details class="details" id="error-details" hidden><summary>Details</summary><pre id="error-pre"></pre></details>
+        <div class="row-center gap" id="done-actions"></div>
+      </div>
+    </section>
+
+    <!-- ACCOUNTS -->
+    <section class="screen" id="screen-accounts" hidden aria-labelledby="acc-title">
+      <header class="head">
+        <h1 id="acc-title">Accounts</h1>
+        <p class="sub">Sign in to each AI once. AI Switch uses its own browser profile<span id="acc-browser"></span>, separate from your everyday browser, and remembers the sign-in.</p>
+      </header>
+      <div class="acc-list" id="acc-list"></div>
+      <div class="card notice" id="browser-missing" hidden>
+        <p><strong>No Edge or Chrome found.</strong> AI Switch can download Chromium (about 150 MB) into its own folder.</p>
+        <div class="row"><button class="btn primary" id="download-browser" type="button">Download Chromium</button>
+          <div class="bar slim" id="dl-bar" hidden><span id="dl-fill"></span></div><span class="muted small" id="dl-text"></span></div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="screen" id="screen-history" hidden aria-labelledby="hist-title">
+      <header class="head"><h1 id="hist-title">History</h1><p class="sub">Past moves. Only dates and counts are kept here — never your memory.</p></header>
+      <div id="hist-list" class="hist-list"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="screen" id="screen-settings" hidden aria-labelledby="set-title">
+      <header class="head"><h1 id="set-title">Settings</h1></header>
+      <div class="card form">
+        <label for="set-output">Output folder</label>
+        <div class="row"><input type="text" id="set-output"><button class="btn ghost" id="pick-output" type="button">Browse…</button>
+          <button class="btn ghost" id="open-output" type="button">Open</button></div>
+        <label for="set-browser">Browser</label>
+        <select id="set-browser"><option value="auto">Automatic (Edge on Windows)</option><option value="edge">Microsoft Edge</option><option value="chrome">Google Chrome</option></select>
+        <p class="muted small" id="set-browser-found"></p>
+        <label for="set-lang">Language</label>
+        <select id="set-lang"><option value="en">English</option></select>
+      </div>
+      <div class="card form">
+        <h2 class="small-h">Website fixes</h2>
+        <p class="muted small">When an AI site changes its layout, a fix can be published in the AI Switch repository. This downloads only the page-selector files — no personal data is sent.</p>
+        <div class="row"><button class="btn primary" id="update-fixes" type="button">Update fixes</button><span class="small" id="fixes-result" aria-live="polite"></span></div>
+        <details><summary class="small">Private repository?</summary>
+          <label for="set-token">GitHub token (read-only, only needed if the repository is private)</label>
+          <div class="row"><input type="password" id="set-token" autocomplete="off" placeholder="not set"><button class="btn ghost" id="save-token" type="button">Save</button></div>
+        </details>
+      </div>
+      <div class="card form">
+        <h2 class="small-h">Sign-ins</h2>
+        <p class="muted small">Forget every AI sign-in stored in AI Switch's browser profile. Your everyday browser is not affected.</p>
+        <div class="row"><button class="btn danger" id="reset-signins" type="button">Reset sign-ins</button><span class="small" id="reset-result" aria-live="polite"></span></div>
+      </div>
+      <p class="muted small about">AI Switch <span id="about-version"></span> · Your memory only goes to the two AI websites you choose. No analytics, no other servers.</p>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

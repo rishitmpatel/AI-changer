@@ -3,8 +3,8 @@ from ai_switch.verify import compare, keywords
 
 
 def test_compare_against_real_looking_answer(fixtures_dir):
-    memory = parse_memory_text((fixtures_dir / "replies" / "chatgpt_memory_reply.txt").read_text(), "chatgpt", "ask_ai")
-    answer = (fixtures_dir / "replies" / "claude_verify_answer.txt").read_text()
+    memory = parse_memory_text((fixtures_dir / "replies" / "chatgpt_memory_reply.txt").read_text(encoding="utf-8"), "chatgpt", "ask_ai")
+    answer = (fixtures_dir / "replies" / "claude_verify_answer.txt").read_text(encoding="utf-8")
     report = compare(memory, answer)
     missing = {f.text for f in report.missing}
     assert "Partner is named Sam; they have a dog called Miso." in missing

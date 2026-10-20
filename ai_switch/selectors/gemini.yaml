@@ -8,6 +8,11 @@ urls:
   saved_info: https://gemini.google.com/saved-info
   takeout: https://takeout.google.com/
 allowed_domains: [gemini.google.com, google.com, gstatic.com, googleapis.com, googleusercontent.com]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [__Secure-1PSID, SID]
+  domains: [google.com]
 memory_from_chat: true
 selectors:
   logged_in: ['a[aria-label^="Google Account"]', 'img.gb_P', 'rich-textarea']

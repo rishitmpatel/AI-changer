@@ -72,13 +72,24 @@ class Context:
     strict_network: bool = True
     only_methods: tuple[Method, ...] | None = None
     max_chats: int = 50
+    #: BrowserManager for the user's own Edge/Chrome (CDP mode). None = Playwright launches its own.
+    browser_manager: Any = None
+    #: Combine every automatic export method that works (export file + memory page + ask the AI)
+    #: instead of stopping at the first success. The desktop app turns this on.
+    auto_merge: bool = False
+    #: Called with the BrowserSession when a CAPTCHA/human check appears; must return once solved.
+    on_challenge: Callable[[Any], None] | None = None
 
     def open_browser(self, config: ProviderConfig) -> ContextManager[BrowserSession]:
         if self.offline:
             raise MethodUnavailable("browser methods are disabled by --offline")
         if self.browser_factory:
             return self.browser_factory(config)
-        return BrowserSession(config, headless=self.headless, strict_network=self.strict_network)
+        if self.browser_manager is not None:
+            return BrowserSession(config, manager=self.browser_manager, strict_network=self.strict_network,
+                                  on_challenge=self.on_challenge)
+        return BrowserSession(config, headless=self.headless, strict_network=self.strict_network,
+                              on_challenge=self.on_challenge)
 
 
 @dataclass
@@ -116,11 +127,28 @@ class BaseAdapter:
         self.last_method: Method | None = None
         self._parsed: ParsedExport | None = None
         self._weak_memory: MemoryDoc | None = None
+        self.merged_methods: list[Method] = []
+        self.last_error: AiSwitchError | None = None
 
     # ================================================================== public interface
     def export_memory(self) -> MemoryDoc:
-        doc = self._run("export_memory", self.export_memory_methods, step=f"Export memory from {self.name}")
-        return doc
+        step = f"Export memory from {self.name}"
+        if self.ctx.auto_merge:
+            automatic = [m for m in (Method.EXPORT_FILE, Method.OFFICIAL_FLOW, Method.ASK_AI)
+                         if m in self.export_memory_methods and (m is not Method.EXPORT_FILE or self.ctx.export_path)]
+            merged = MemoryDoc(self.id)
+            used: list[Method] = []
+            for method in automatic:
+                doc = self._try("export_memory", method)
+                if doc is not None and len(doc):
+                    merged.extend(doc)
+                    used.append(method)
+            if used:
+                self.last_method, self.merged_methods = used[0], used
+                return merged
+            rest = tuple(m for m in self.export_memory_methods if m not in automatic)
+            return self._run("export_memory", rest, step=step)
+        return self._run("export_memory", self.export_memory_methods, step=step)
 
     def import_memory(self, doc: MemoryDoc) -> ImportResult:
         if not len(doc):
@@ -139,31 +167,40 @@ class BaseAdapter:
         return self._run("ask", (Method.ASK_AI, Method.CLIPBOARD), prompt, step=f"Ask {self.name}")
 
     # ================================================================== fallback runner
+    def _try(self, op: str, method: Method, *args: Any, tried: list[Attempt] | None = None) -> Any:
+        """Run one method; returns its result, or None (recording why) if it is skipped or fails."""
+        tried = self.attempts if tried is None else tried
+        if self.ctx.only_methods and method not in self.ctx.only_methods:
+            return None
+        handler = getattr(self, f"_{op}_{method.value}", None)
+        if handler is None:
+            return None
+        if method.needs_browser and self.ctx.offline:
+            tried.append(Attempt(method, False, "skipped (--offline)"))
+            return None
+        try:
+            result = handler(*args)
+        except (MethodUnavailable, MethodFailed) as exc:
+            tried.append(Attempt(method, False, str(exc), exc.hint))
+            self.ctx.console.warn(f"{self.name}: method {method.label} → {exc}")
+            if exc.hint:
+                self.ctx.console.info(f"      hint: {exc.hint}")
+            log.info("%s %s via %s failed: %s", self.id, op, method.value, exc)
+            self.last_error = exc
+            return None
+        tried.append(Attempt(method, True))
+        log.info("%s %s via %s ok", self.id, op, method.value)
+        return result
+
     def _run(self, op: str, methods: tuple[Method, ...], *args: Any, step: str) -> Any:
         tried: list[Attempt] = []
         for method in methods:
-            if self.ctx.only_methods and method not in self.ctx.only_methods:
-                continue
-            handler = getattr(self, f"_{op}_{method.value}", None)
-            if handler is None:
-                continue
-            if method.needs_browser and self.ctx.offline:
-                tried.append(Attempt(method, False, "skipped (--offline)"))
-                continue
-            try:
-                result = handler(*args)
-            except (MethodUnavailable, MethodFailed) as exc:
-                tried.append(Attempt(method, False, str(exc), exc.hint))
-                self.ctx.console.warn(f"{self.name}: method {method.label} → {exc}")
-                if exc.hint:
-                    self.ctx.console.info(f"      hint: {exc.hint}")
-                log.info("%s %s via %s failed: %s", self.id, op, method.value, exc)
-                continue
-            tried.append(Attempt(method, True))
-            self.attempts += tried
-            self.last_method = method
-            log.info("%s %s via %s ok", self.id, op, method.value)
-            return result
+            before = len(tried)
+            result = self._try(op, method, *args, tried=tried)
+            if len(tried) > before and tried[-1].ok:
+                self.attempts += tried
+                self.last_method = method
+                return result
         self.attempts += tried
         if op == "export_memory" and self._weak_memory is not None and len(self._weak_memory):
             self.ctx.console.warn(f"{self.name}: using {len(self._weak_memory)} facts derived from your chat "
@@ -394,15 +431,92 @@ class BaseAdapter:
         steps = self.config.manual("import_memory") or f"Open {self.config.url('home')} and paste into a new chat."
         folder = self.ctx.out_dir / "import_parts" / f"{self.id}-clipboard"
         console.info(f"  Manual import into {self.name}: {len(parts)} part(s), also saved in {folder}")
-        for i, part in enumerate(parts, 1):
-            copied = True
-            try:
-                self.ctx.clipboard.copy(part)
-            except Exception:
-                copied = False
-            where = "is on your clipboard" if copied else f"is in {folder / f'part-{i:02d}.txt'}"
-            console.pause(f"Part {i}/{len(parts)} {where}. {steps}")
+        session = self._open_paste_page()
+        try:
+            for i, part in enumerate(parts, 1):
+                copied = True
+                try:
+                    self.ctx.clipboard.copy(part)
+                except Exception:
+                    copied = False
+                where = "is on your clipboard" if copied else f"is in {folder / f'part-{i:02d}.txt'}"
+                if session is not None:
+                    console.wait_for(
+                        {"kind": "paste", "provider": self.id, "part": i, "total": len(parts),
+                         "title": f"Paste into {self.name}",
+                         "text": f"Part {i} of {len(parts)} {where}. Paste it into the box in the browser window "
+                                 f"and click Import (or Send) — I'll continue when you do.",
+                         "steps": steps},
+                        self._paste_detector(session, part))
+                else:
+                    console.pause(f"Part {i}/{len(parts)} {where}. {steps}")
+        finally:
+            if session is not None:
+                session.__exit__(None, None, None)
         return ImportResult(Method.CLIPBOARD, len(parts), manual=True)
+
+    def _open_paste_page(self) -> Any:
+        """Open the target's import screen (or a new chat) for a manual paste; None without a browser."""
+        if self.ctx.offline:
+            return None
+        try:
+            session = self.ctx.open_browser(self.config).__enter__()
+        except Exception:
+            return None
+        try:
+            url_key = "new_chat" if self.config.url("new_chat") else "home"
+            for flow in ("import_memory", "import_profile"):
+                for raw in (self.config.data.get("flows") or {}).get(flow) or []:
+                    if isinstance(raw, dict) and "goto" in raw:
+                        url_key = raw["goto"]
+                        break
+                else:
+                    continue
+                break
+            session.goto(url_key)
+            if getattr(session, "manager", None) is not None:
+                session.manager.set_visible(True)
+        except Exception:
+            pass
+        return session
+
+    def _paste_detector(self, session: Any, part: str) -> Callable[[], bool]:
+        """True once the user has pasted ``part`` and submitted it (message sent / dialog closed)."""
+        lines = [ln[2:].strip() for ln in part.splitlines() if ln.startswith("- ")] or \
+                [ln.strip() for ln in part.splitlines() if len(ln.strip()) > 15]
+        snippet = (lines[0] if lines else part.strip())[:40]
+        boxes = [arg["into"] for flow in ("import_memory", "import_profile")
+                 for raw in (self.config.data.get("flows") or {}).get(flow) or []
+                 if isinstance(raw, dict) for action, arg in raw.items() if action in ("fill", "append")]
+        state = {"armed": False}
+
+        def check() -> bool:
+            try:
+                if any(snippet in t for t in session.texts("user_message")):
+                    return True
+                for key in boxes:  # official import box: filled with our text, then submitted/closed
+                    el = session.find(key, timeout_ms=0, required=False)
+                    value = ""
+                    if el is not None:
+                        with contextlib.suppress(Exception):
+                            value = el.input_value()
+                    if snippet in value:
+                        state["armed"] = True
+                    elif state["armed"]:
+                        return True
+                body = session.body_text()
+                if snippet in body and not state["armed"]:
+                    box = session.find("chat_input", timeout_ms=0, required=False)
+                    typed = ""
+                    if box is not None:
+                        with contextlib.suppress(Exception):
+                            typed = box.inner_text()
+                    return snippet not in typed
+            except Exception:
+                return False
+            return False
+
+        return check
 
     # ================================================================== chats
     def chats_dir(self) -> Path:

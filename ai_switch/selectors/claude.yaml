@@ -9,6 +9,11 @@ urls:
   capabilities: https://claude.ai/settings/capabilities
   new_project: https://claude.ai/projects/create
 allowed_domains: [claude.ai, claude.com, anthropic.com, claudeusercontent.com, challenges.cloudflare.com]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [sessionKey]
+  domains: [claude.ai]
 memory_from_chat: true
 selectors:
   logged_in: ['[data-testid="user-menu-button"]', 'button[data-testid="user-menu"]', 'div[contenteditable="true"].ProseMirror']

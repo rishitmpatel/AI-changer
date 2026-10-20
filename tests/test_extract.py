@@ -10,7 +10,7 @@ def test_prompt_has_markers_and_headings():
 
 
 def test_parse_ask_ai_reply(fixtures_dir):
-    reply = (fixtures_dir / "replies" / "chatgpt_memory_reply.txt").read_text()
+    reply = (fixtures_dir / "replies" / "chatgpt_memory_reply.txt").read_text(encoding="utf-8")
     doc = parse_memory_text(reply, "chatgpt", "ask_ai")
     assert doc.counts() == {"profile": 2, "preferences": 2, "people": 1, "projects": 1, "topics": 2}
     texts = [f.text for f in doc.all_facts()]
