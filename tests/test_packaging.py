@@ -44,6 +44,7 @@ def test_build_workflow_smoke_tests_and_release():
     wf = yaml.safe_load((ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8"))
     on = wf[True] if True in wf else wf["on"]  # YAML 1.1 parses "on" as True
     assert on["push"]["tags"] == ["v*"]
+    assert "release_tag" in on["workflow_dispatch"]["inputs"]  # release without pushing a tag
     win = "\n".join(str(s.get("run", "")) for s in wf["jobs"]["windows"]["steps"])
     assert "pyinstaller packaging/ai-switch.spec" in win
     assert "--self-test" in win and "--with-browser" in win and "--smoke-seconds" in win
