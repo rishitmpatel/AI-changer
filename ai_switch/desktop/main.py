@@ -241,7 +241,18 @@ def open_window(url: str, services: Any, smoke: dict[str, Any] | None = None) ->
 
 
 def _smoke_close(smoke: dict[str, Any], close) -> None:
-    time.sleep(float(smoke.get("seconds", 8)))
+    """Close once the UI has loaded (plus a moment to settle), or after ``seconds`` at the latest.
+
+    WebView2's first start on a fresh machine can take a while, so this waits for the page
+    instead of a fixed delay."""
+    services = smoke.get("services")
+    deadline = time.monotonic() + float(smoke.get("seconds", 8))
+    while time.monotonic() < deadline:
+        if services is not None and getattr(services, "ui_seen", False):
+            smoke["load_seconds"] = round(float(smoke.get("seconds", 8)) - (deadline - time.monotonic()), 1)
+            time.sleep(2)
+            break
+        time.sleep(0.25)
     try:
         close()
     except Exception:
@@ -279,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
                 time.sleep(3600)
         except KeyboardInterrupt:
             return 0
-    smoke = {"seconds": args.smoke_seconds, "loaded": False} if args.smoke_seconds else None
+    smoke = {"seconds": args.smoke_seconds, "loaded": False, "services": services} if args.smoke_seconds else None
     try:
         backend = open_window(url, services, smoke)
     finally:
@@ -291,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
     if smoke is not None:
         # "loaded" = the page's JavaScript ran and talked to the backend with its token
         result = {"window": backend, "loaded": bool(services.ui_seen), "window_event": smoke.get("loaded", False),
-                  "version": __version__}
+                  "load_seconds": smoke.get("load_seconds"), "version": __version__}
         (home_dir() / "smoke.json").write_text(json.dumps(result), encoding="utf-8")
         _out(json.dumps(result))
         return 0 if result["loaded"] else 3
