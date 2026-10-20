@@ -7,6 +7,11 @@ urls:
   new_chat: https://chat.mistral.ai/chat
   memories: https://chat.mistral.ai/memories
 allowed_domains: [mistral.ai]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [ory_session*]
+  domains: [mistral.ai]
 memory_from_chat: true
 selectors:
   logged_in: ['a[href="/memories"]', 'button[aria-label*="Account"]', 'textarea']

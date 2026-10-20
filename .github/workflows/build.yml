@@ -1,0 +1,104 @@
+name: build
+# Builds the desktop app on every push/PR and smoke-tests the real executables.
+# On a version tag (v1.0.0 …) it also publishes a GitHub Release with both zips.
+on:
+  push:
+    branches: [main, "claude/**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[build]"
+      - name: Version matches tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $v = python -c "import ai_switch; print(ai_switch.__version__)"
+          if ("v$v" -ne "${{ github.ref_name }}") { Write-Error "tag ${{ github.ref_name }} != version v$v"; exit 1 }
+      - name: Build AI Switch.exe
+        run: pyinstaller packaging/ai-switch.spec --noconfirm --clean
+      - name: Smoke test — self-test with Microsoft Edge over CDP
+        shell: pwsh
+        run: |
+          $env:AI_SWITCH_HOME = "$pwd\smoke-home"
+          $p = Start-Process -FilePath "dist\AI Switch\AI Switch.exe" -ArgumentList "--self-test", "`"$pwd\selftest.json`"", "--with-browser" -Wait -PassThru
+          Get-Content selftest.json
+          if ($p.ExitCode -ne 0) { Write-Error "self-test failed ($($p.ExitCode))"; exit 1 }
+      - name: Smoke test — open the app window and check the UI loads
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          $env:AI_SWITCH_HOME = "$pwd\smoke-home"
+          $p = Start-Process -FilePath "dist\AI Switch\AI Switch.exe" -ArgumentList "--smoke-seconds", "15" -Wait -PassThru
+          Get-Content "smoke-home\smoke.json"
+          Get-Content "smoke-home\logs\ai-switch.log" -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { Write-Error "window smoke test failed ($($p.ExitCode))"; exit 1 }
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path "dist\AI Switch" -DestinationPath AI-Switch-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AI-Switch-Windows
+          path: AI-Switch-Windows.zip
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[build]"
+      - name: Build AI Switch.app
+        run: pyinstaller packaging/ai-switch.spec --noconfirm --clean
+      - name: Smoke test — self-test with Google Chrome over CDP
+        run: |
+          export AI_SWITCH_HOME="$PWD/smoke-home"
+          "dist/AI Switch.app/Contents/MacOS/AI Switch" --self-test "$PWD/selftest.json" --with-browser
+          cat selftest.json
+      - name: Smoke test — open the app window and check the UI loads
+        timeout-minutes: 5
+        run: |
+          export AI_SWITCH_HOME="$PWD/smoke-home"
+          "dist/AI Switch.app/Contents/MacOS/AI Switch" --smoke-seconds 15
+          cat smoke-home/smoke.json
+      - name: Zip
+        run: ditto -c -k --sequesterRsrc --keepParent "dist/AI Switch.app" AI-Switch-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AI-Switch-macOS
+          path: AI-Switch-macOS.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la artifacts
+          gh release create "${{ github.ref_name }}" artifacts/AI-Switch-Windows.zip artifacts/AI-Switch-macOS.zip \
+            --repo "${{ github.repository }}" --title "AI Switch ${{ github.ref_name }}" \
+            --notes-file packaging/release-notes.md

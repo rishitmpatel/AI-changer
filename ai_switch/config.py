@@ -4,14 +4,17 @@ Lookup order, later wins (deep-merged):
 
 1. ``DEFAULT_CONFIG`` inside the adapter module (lets a new provider be a single file)
 2. ``ai_switch/selectors/<provider>.yaml`` shipped with the package
-3. ``~/.ai-switch/selectors/<provider>.yaml`` – your local fixes; survives upgrades
+3. ``<app data>/fixes/<provider>.yaml`` – downloaded by "Update fixes" (sanitised, see fixes.py)
+4. ``<app data>/selectors/<provider>.yaml`` – your own local edits; always win
 
-Set ``AI_SWITCH_HOME`` to move ``~/.ai-switch`` elsewhere.
+App data lives in ``%APPDATA%\\AI Switch`` (Windows), ``~/Library/Application Support/AI Switch``
+(macOS) or ``~/.ai-switch`` (Linux). Set ``AI_SWITCH_HOME`` to put it elsewhere.
 """
 from __future__ import annotations
 
 import copy
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -25,11 +28,26 @@ PACKAGE_SELECTORS = Path(__file__).parent / "selectors"
 
 
 def home_dir() -> Path:
-    return Path(os.environ.get("AI_SWITCH_HOME") or Path.home() / ".ai-switch")
+    if os.environ.get("AI_SWITCH_HOME"):
+        return Path(os.environ["AI_SWITCH_HOME"])
+    if sys.platform.startswith("win"):
+        return Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "AI Switch"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "AI Switch"
+    return Path.home() / ".ai-switch"
 
 
 def user_selectors_dir() -> Path:
     return home_dir() / "selectors"
+
+
+def fixes_dir() -> Path:
+    return home_dir() / "fixes"
+
+
+def default_output_dir() -> Path:
+    docs = Path.home() / "Documents"
+    return (docs if docs.is_dir() else Path.home()) / "AI Switch"
 
 
 def profile_dir() -> Path:
@@ -105,7 +123,8 @@ class ProviderConfig:
 def load_config(provider: str, defaults: dict[str, Any] | None = None) -> ProviderConfig:
     data = copy.deepcopy(defaults or {})
     sources: list[Path] = []
-    for path in (PACKAGE_SELECTORS / f"{provider}.yaml", user_selectors_dir() / f"{provider}.yaml"):
+    for path in (PACKAGE_SELECTORS / f"{provider}.yaml", fixes_dir() / f"{provider}.yaml",
+                 user_selectors_dir() / f"{provider}.yaml"):
         if path.is_file():
             data = deep_merge(data, _load_yaml(path))
             sources.append(path)

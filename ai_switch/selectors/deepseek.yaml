@@ -6,6 +6,11 @@ urls:
   login: https://chat.deepseek.com/sign_in
   new_chat: https://chat.deepseek.com/
 allowed_domains: [deepseek.com]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: []
+  domains: [deepseek.com]
 memory_from_chat: false          # no cross-chat memory: imports become a context primer
 selectors:
   logged_in: ['textarea#chat-input', 'textarea']

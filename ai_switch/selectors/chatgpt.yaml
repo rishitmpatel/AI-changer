@@ -14,6 +14,11 @@ urls:
 # Hosts the browser may load in strict-network mode (subdomains included). Everything else is blocked.
 # challenges.cloudflare.com is the bot check chatgpt.com embeds; removing it may break the site.
 allowed_domains: [chatgpt.com, openai.com, oaistatic.com, oaiusercontent.com, challenges.cloudflare.com]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [__Secure-next-auth.session-token*]
+  domains: [chatgpt.com]
 memory_from_chat: true
 selectors:
   logged_in: ['[data-testid="accounts-profile-button"]', 'button[aria-label="Open profile menu"]', 'nav a[href^="/c/"]', '#prompt-textarea']

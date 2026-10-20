@@ -52,6 +52,38 @@ class Console:
             except EOFError:
                 pass
 
+    def wait_for(self, card: dict, check=None, poll: float = 2.0, timeout: float | None = None) -> bool:
+        """Show a "do this in the browser" card and return once ``check()`` is true (auto-detected)
+        or the user says it's done. Returns True when the check detected it."""
+        import threading
+        import time
+
+        self.info(f"  → {card.get('title', '')}: {card.get('text', '')}")
+        if card.get("steps"):
+            self.info(f"    ({card['steps']})")
+        if check is None or not self.interactive:
+            self.pause("Do it in the browser window")
+            return False
+        done = threading.Event()
+
+        def _enter() -> None:
+            try:
+                input("    I'll notice automatically — or press Enter when done… ")
+            except EOFError:
+                pass
+            done.set()
+
+        threading.Thread(target=_enter, daemon=True).start()
+        start = time.monotonic()
+        while not done.is_set():
+            if check():
+                self.ok("detected — continuing")
+                return True
+            if timeout is not None and time.monotonic() - start > timeout:
+                return False
+            done.wait(poll)
+        return False
+
     def read_block(self, prompt: str, terminator: str = "END-MEMORY") -> str:
         """Read multi-line text typed/pasted in the terminal (input is not echoed back by us)."""
         if not self.interactive:
@@ -97,6 +129,12 @@ class ScriptedConsole(Console):
     def read_block(self, prompt: str, terminator: str = "END-MEMORY") -> str:
         self.info(f"  → {prompt}")
         return self.blocks.pop(0) if self.blocks else ""
+
+    def wait_for(self, card: dict, check=None, poll: float = 2.0, timeout: float | None = None) -> bool:
+        self.info(f"  → {card.get('title', '')}: {card.get('text', '')}")
+        self.cards = getattr(self, "cards", []) + [card]
+        self.pauses.append(" ".join(filter(None, [card.get("text", ""), card.get("steps", "")])))
+        return bool(check and check())
 
     @property
     def transcript(self) -> str:

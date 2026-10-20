@@ -30,6 +30,8 @@ def _common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--method", action="append", choices=[m.value for m in Method],
                    help="restrict to these fallback methods (repeatable)")
     p.add_argument("--yes", "-y", action="store_true", help="non-interactive: accept defaults, no pauses")
+    p.add_argument("--playwright-browser", action="store_true",
+                   help="use Playwright's own Chromium instead of your installed Edge/Chrome")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -84,9 +86,41 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _manager():
+    """Use the installed Edge/Chrome over CDP when there is one; else Playwright's own browser."""
+    from .browsers import BrowserManager, pick_browser
+
+    return BrowserManager() if pick_browser() else None
+
+
+def cmd_login(provider: str) -> int:
+    from .accounts import SIGNED_IN, AccountService
+    from .adapters import resolve
+    from .browsers import BrowserManager
+    from .config import load_config
+
+    pid = resolve(provider)
+    adapter = get_adapter(pid)
+    if _manager() is None:  # no system browser: old behaviour with Playwright's Chromium
+        get_adapter(pid, Context(console=Console(), strict_network=False)).login()
+        return 0
+    service = AccountService(BrowserManager(), {pid: load_config(pid, adapter.DEFAULT_CONFIG)})
+    print(f"Opening {adapter.name} in the AI Switch browser. Sign in as usual; I'll notice when you're done "
+          f"(or just close the window).")
+    state = service.sign_in(pid, on_update=lambda s: s == "detected" and print("  ✓ sign-in detected"))
+    if state == SIGNED_IN:
+        print(f"  ✓ signed in to {adapter.name}; the session is saved for next time")
+        return 0
+    print(f"  ! couldn't confirm the sign-in to {adapter.name} (state: {state}). If you did sign in, carry on — "
+          f"the next command checks again.")
+    return 0 if state == "unknown" else 1
+
+
 def make_context(args: argparse.Namespace) -> Context:
     console = Console(interactive=False if getattr(args, "yes", False) else None)
+    offline = getattr(args, "offline", False)
     return Context(console=console, export_path=getattr(args, "export", None),
+                   browser_manager=None if offline or getattr(args, "playwright_browser", False) else _manager(),
                    out_dir=getattr(args, "out", Path("ai-switch-output")),
                    offline=getattr(args, "offline", False), headless=getattr(args, "headless", False),
                    strict_network=getattr(args, "strict_network", True),
@@ -125,9 +159,7 @@ def main(argv: list[str] | None = None) -> int:
 
             return serve(port=args.port, open_browser=not args.no_open)
         if args.command == "login":
-            ctx = Context(console=Console(), strict_network=False)
-            get_adapter(args.provider, ctx).login()
-            return 0
+            return cmd_login(args.provider)
         ctx = make_context(args)
         if args.command == "move":
             res = migrate.move(ctx, args.source, args.target, with_chats=args.chats, redact=args.redact,

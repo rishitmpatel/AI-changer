@@ -156,7 +156,15 @@ class FakeBrowser:
             return list(self.ai.memory)
         if key == "assistant_message":
             return list(self.ai.replies)
+        if key == "user_message":
+            return list(self.ai.sent)
         return []
+
+    def body_text(self) -> str:
+        return "\n".join(self.ai.memory)
+
+    def challenge_present(self) -> bool:
+        return False
 
     def upload(self, key: str, path: Path) -> None:
         self.find(key)
@@ -230,3 +238,61 @@ def chromium_path() -> str | None:
     if os.environ.get("CI"):  # never let CI pass by silently skipping the real-browser tests
         pytest.fail("no Chromium found; run: python -m playwright install chromium")
     return None
+
+
+# --------------------------------------------------------------------------- desktop app
+
+
+class FakeAccounts:
+    """AccountService stand-in backed by the FakeAI world."""
+
+    def __init__(self, world: dict) -> None:
+        self.world = world
+        self.cache: dict[str, str] = {}
+        self.signins: list[str] = []
+
+    def status(self, provider: str, cookies=None) -> str:
+        ai = self.world.setdefault(provider, FakeAI())
+        self.cache[provider] = "signed_in" if ai.logged_in else "signed_out"
+        return self.cache[provider]
+
+    def status_all(self) -> dict:
+        from ai_switch.adapters import available
+
+        return {p: self.status(p) for p in available()}
+
+    def sign_in(self, provider: str, **kw) -> str:
+        self.signins.append(provider)
+        self.world.setdefault(provider, FakeAI()).logged_in = True
+        return self.status(provider)
+
+    def reset(self) -> None:
+        for ai in self.world.values():
+            ai.logged_in = False
+        self.cache.clear()
+
+
+@pytest.fixture
+def app_services(tmp_path, world):
+    from ai_switch.desktop.api import Services
+    from ai_switch.desktop.state import History, Settings
+
+    def factory(config):
+        return FakeBrowser(config, world.setdefault(config.provider, FakeAI()))
+
+    settings = Settings(output_dir=str(tmp_path / "out"))
+    return Services(settings=settings, history=History(tmp_path / "history.json"), manager=None,
+                    accounts=FakeAccounts(world), browser_factory=factory, clipboard=MemoryClipboard())
+
+
+@pytest.fixture
+def app_server(app_services):
+    import threading
+
+    from ai_switch.desktop.api import make_server
+
+    server, token = make_server(app_services)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{server.server_address[1]}", token, app_services
+    server.shutdown()
+    server.server_close()

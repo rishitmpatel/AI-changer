@@ -8,6 +8,11 @@ urls:
   personalization: https://copilot.microsoft.com/settings/personalization
   privacy_dashboard: https://account.microsoft.com/privacy/copilot
 allowed_domains: [copilot.microsoft.com, microsoft.com, bing.com, live.com, microsoftonline.com]
+# Cookies that exist only while you are signed in (names only; values are never read).
+# A trailing * matches a prefix. Empty list = check the logged_in page selector instead.
+login:
+  cookies: [_U, MSPAuth, __Host-copilot-user*]
+  domains: [copilot.microsoft.com, bing.com, live.com]
 memory_from_chat: true
 selectors:
   logged_in: ['button[aria-label*="Profile"]', 'button[title*="Account"]', 'textarea#userInput', 'textarea']
