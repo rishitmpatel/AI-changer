@@ -25,10 +25,10 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def isolated_home(tmp_path, monkeypatch):
     home = tmp_path / "ai-switch-home"
     monkeypatch.setenv("AI_SWITCH_HOME", str(home))
-    if sys.platform.startswith("linux"):
-        # Playwright's downloaded Chromium has no AppArmor profile, so on Ubuntu 24.04+ its sandbox
-        # can't start (Playwright itself always passes --no-sandbox on Linux). Real installs don't need this.
-        monkeypatch.setenv("AI_SWITCH_NO_SANDBOX", "1")
+    # Tests drive Playwright's downloaded Chromium, whose sandbox can't start on CI runners (AppArmor on
+    # Ubuntu 24.04, the admin account on Windows runners). Playwright itself always passes --no-sandbox
+    # for this reason. Installed Edge/Chrome don't need it; the exe smoke test in build.yml uses them as-is.
+    monkeypatch.setenv("AI_SWITCH_NO_SANDBOX", "1")
     return home
 
 

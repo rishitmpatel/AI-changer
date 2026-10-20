@@ -83,6 +83,7 @@ def self_test(report_path: Path, with_browser: bool = False) -> int:
 
     check("browsers", lambda: [b.name for b in find_browsers()], required=False)
     if with_browser:
+        check("browser_signin_mode", _plain_probe)
         check("browser_cdp", _browser_roundtrip)
     checks["ok"] = ok
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -127,6 +128,44 @@ def _playwright_driver() -> str:
     paths = exe if isinstance(exe, tuple) else (exe,)
     _require(all(Path(p).exists() for p in paths), paths)
     return str(paths[0])
+
+
+def _plain_probe() -> str:
+    """Sign-in mode: the browser starts normally and a page sees navigator.webdriver === false."""
+    import http.server
+    import tempfile
+    import urllib.parse
+
+    from ..browsers import BrowserManager
+
+    got: dict[str, Any] = {}
+
+    class Probe(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a: Any) -> None:
+            pass
+
+        def do_GET(self) -> None:  # noqa: N802
+            if self.path.startswith("/r?"):
+                got.update(urllib.parse.parse_qs(self.path[3:]))
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<script>fetch('/r?wd='+navigator.webdriver)</script>")
+
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Probe)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    mgr = BrowserManager(profile=Path(tempfile.mkdtemp(prefix="ais-probe-")), extra_args=("--headless=new",))
+    try:
+        mgr.launch_plain(f"http://127.0.0.1:{srv.server_address[1]}/")
+        deadline = time.monotonic() + 30
+        while not got and time.monotonic() < deadline:
+            time.sleep(0.2)
+        _require(got.get("wd") == ["false"], got or "page never loaded")
+        _require(mgr.endpoint() is None, "debug port open in sign-in mode")
+        return f"{mgr.browser.name}: navigator.webdriver = false, no debugging port"
+    finally:
+        mgr.close()
+        srv.shutdown()
 
 
 def _browser_roundtrip() -> str:

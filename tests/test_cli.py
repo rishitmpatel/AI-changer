@@ -16,7 +16,7 @@ def test_export_backup_offline(tmp_path, fixtures_dir, export_zip, capsys):
     assert code == 0
     out_dirs = list((tmp_path / "o").iterdir())
     assert len(out_dirs) == 1
-    mem = json.loads((out_dirs[0] / "memory.json").read_text())
+    mem = json.loads((out_dirs[0] / "memory.json").read_text(encoding="utf-8"))
     assert mem["source_provider"] == "claude"
     assert (out_dirs[0] / "chats.json").exists()
     printed = capsys.readouterr().out
@@ -29,7 +29,7 @@ def test_move_offline_noninteractive_writes_parts(tmp_path, export_zip, capsys):
     assert code == 0
     out_dir = next((tmp_path / "o").iterdir())
     parts = list((out_dir / "import_parts" / "chatgpt-clipboard").glob("part-*.txt"))
-    assert parts and parts[0].read_text().startswith("Please remember")
+    assert parts and parts[0].read_text(encoding="utf-8").startswith("Please remember")
 
 
 def test_unknown_provider_error(capsys):

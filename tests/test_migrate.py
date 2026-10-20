@@ -15,7 +15,7 @@ def test_move_chatgpt_to_claude_full_flow(make_ctx, world, fixtures_dir):
     for name in ("memory.json", "memory.md", "chats.json", "chats.md", "privacy_review.md", "verify_report.md",
                  "run.log"):
         assert (out / name).exists(), name
-    mem = json.loads((out / "memory.json").read_text())
+    mem = json.loads((out / "memory.json").read_text(encoding="utf-8"))
     texts = [f["text"] for facts in mem["categories"].values() for f in facts]
     assert "Phone number is [removed phone number] for SMS reminders." in texts
     assert res.imported.method is Method.OFFICIAL_FLOW
@@ -23,7 +23,7 @@ def test_move_chatgpt_to_claude_full_flow(make_ctx, world, fixtures_dir):
     assert world["claude"].uploads
     assert res.report.coverage == 1.0
     # privacy: no memory content in terminal output or run.log
-    transcript = ctx.console.transcript + (out / "run.log").read_text()
+    transcript = ctx.console.transcript + (out / "run.log").read_text(encoding="utf-8")
     for bit in SECRET_BITS:
         assert bit not in transcript, bit
     assert "+1 *" in ctx.console.transcript  # masked identifier shown
@@ -41,7 +41,7 @@ def test_move_reports_missing_and_retries(make_ctx, world, fixtures_dir):
     res = migrate.move(ctx, "chatgpt", "gemini", redact="none", retry=True)
     assert res.report.missing and res.report.covered
     assert "re-sent" in ctx.console.transcript
-    report = (res.out_dir / "verify_report.md").read_text()
+    report = (res.out_dir / "verify_report.md").read_text(encoding="utf-8")
     assert "## Missing" in report
 
 
@@ -58,7 +58,7 @@ def test_move_offline_is_fully_manual(make_ctx, fixtures_dir):
 def test_export_only_and_import_only(make_ctx, world, fixtures_dir):
     ctx = make_ctx(fixtures_dir / "perplexity")
     backup = migrate.export_only(ctx, "perplexity")
-    assert (backup.out_dir / "memory.md").read_text().startswith("# Memory exported from perplexity")
+    assert (backup.out_dir / "memory.md").read_text(encoding="utf-8").startswith("# Memory exported from perplexity")
     res = migrate.import_only(make_ctx(), "mistral", backup.out_dir / "memory.json", redact="all", verify=False)
     assert res.imported.method is Method.OFFICIAL_FLOW
     assert "Commutes 10 km by bike to work." in world["mistral"].memory

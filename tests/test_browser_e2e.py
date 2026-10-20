@@ -91,8 +91,8 @@ def test_real_browser_move(providers):
     assert res.export_method == "ask_ai"
     assert len(res.memory) == 3
     assert res.imported.method is Method.OFFICIAL_FLOW
-    assert res.report.coverage == 1.0, (res.out_dir / "verify_report.md").read_text()
-    log = (res.out_dir / "run.log").read_text()
+    assert res.report.coverage == 1.0, (res.out_dir / "verify_report.md").read_text(encoding="utf-8")
+    log = (res.out_dir / "run.log").read_text(encoding="utf-8")
     assert "tracker.third-party.example" in log  # strict network blocked the third-party script
     assert "Austin" not in log and "Austin" not in ctx.console.transcript
 

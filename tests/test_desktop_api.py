@@ -176,7 +176,7 @@ def test_settings_roundtrip_and_validation(app_server, isolated_home):
     assert "ghp_secret" not in json.dumps(call(base, token, "/api/state")[1])
     assert call(base, token, "/api/settings", {"browser": "netscape"})[0] == 400
     assert call(base, token, "/api/settings", {"language": "fr"})[0] == 400
-    saved = json.loads((isolated_home / "settings.json").read_text())
+    saved = json.loads((isolated_home / "settings.json").read_text(encoding="utf-8"))
     assert saved["browser"] == "chrome"
 
 
