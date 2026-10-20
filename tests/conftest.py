@@ -2,6 +2,7 @@
 that behaves like an assistant with memory (so fallback chains run without real logins)."""
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import zipfile
@@ -208,9 +209,24 @@ def fixtures_dir() -> Path:
     return FIXTURES
 
 
-@pytest.fixture
+def _playwright_chromium() -> str | None:
+    """The Chromium that `python -m playwright install chromium` downloaded (any OS)."""
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            return p.chromium.executable_path
+    except Exception:
+        return None
+
+
+@pytest.fixture(scope="session")
 def chromium_path() -> str | None:
-    for candidate in ("/opt/pw-browsers/chromium", shutil.which("chromium"), shutil.which("google-chrome")):
+    candidates = (os.environ.get("AI_SWITCH_BROWSER_PATH"), "/opt/pw-browsers/chromium", _playwright_chromium(),
+                  shutil.which("chromium"), shutil.which("chromium-browser"), shutil.which("google-chrome"))
+    for candidate in candidates:
         if candidate and Path(candidate).exists():
             return candidate
+    if os.environ.get("CI"):  # never let CI pass by silently skipping the real-browser tests
+        pytest.fail("no Chromium found; run: python -m playwright install chromium")
     return None
