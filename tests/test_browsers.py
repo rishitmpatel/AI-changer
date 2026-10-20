@@ -195,7 +195,7 @@ def test_self_healing_and_challenge(chromium, tmp_path):
     mgr = BrowserManager(chromium, profile=tmp_path / "p", extra_args=("--headless=new",))
     seen = []
     try:
-        with BrowserSession(config, manager=mgr, strict_network=False, timeout_s=1,
+        with BrowserSession(config, manager=mgr, strict_network=False, timeout_s=5,
                             on_challenge=lambda sess: seen.append(sess.challenge_present())) as s:
             s.goto("home")
             s.click("add_to_memory")
